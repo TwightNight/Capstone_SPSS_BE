@@ -1,9 +1,7 @@
-using BusinessObjects.Dto.Address;
-using BusinessObjects.Dto.Product;
-using BusinessObjects.Models;
-using Services.Response;
+using SPSS.BusinessObject.Dto.Address;
+using SPSS.Shared.Responses;
 
-namespace Services.Interface;
+namespace SPSS.Service.Services.Interfaces;
 
 public interface IAddressService
 {
