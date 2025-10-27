@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="FirebaseAdmin" Version="3.4.0" />
+		<PackageReference Include="Google.Cloud.Storage.V1" Version="4.13.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.10">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<ProjectReference Include="..\SPSS.BusinessObject\SPSS.BusinessObject.csproj">
+			<Private>True</Private>
+		</ProjectReference>
+		<ProjectReference Include="..\SPSS.Shared\SPSS.Shared.csproj">
+			<Private>True</Private>
+		</ProjectReference>
+	</ItemGroup>
+
+</Project>
