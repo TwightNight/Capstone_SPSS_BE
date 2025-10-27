@@ -8,7 +8,7 @@ using Repositories.Interface;
 using Services.Interface;
 using Services.Response;
 
-namespace Services.Implementation;
+namespace SPSS.Service.Services.Implementations;
 
 public class BlogService : IBlogService
 {

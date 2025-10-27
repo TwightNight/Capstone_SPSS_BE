@@ -2,7 +2,7 @@
 using BusinessObjects.Dto.Blog;
 using Services.Response;
 
-namespace Services.Interface;
+namespace SPSS.Service.Services.Interfaces;
 
 public interface IBlogService
 {
