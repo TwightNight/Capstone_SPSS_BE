@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Firebase.Auth;
 using Microsoft.EntityFrameworkCore;
 using SPSS.Service.Interfaces;

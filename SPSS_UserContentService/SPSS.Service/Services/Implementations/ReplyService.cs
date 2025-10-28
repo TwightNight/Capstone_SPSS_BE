@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using SPSS.Service.Interfaces;
 using SPSS.BusinessObject.Dto.Reply;

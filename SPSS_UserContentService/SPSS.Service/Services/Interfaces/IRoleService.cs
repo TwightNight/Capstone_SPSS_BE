@@ -1,8 +1,7 @@
-using BusinessObjects.Dto.Role;
-using BusinessObjects.Dto.User;
-using Services.Response;
+using SPSS.BusinessObject.Dto.Role;
+using SPSS.Shared.Responses;
 
-namespace Services.Interface;
+namespace SPSS.Service.Services.Interfaces;
 
 public interface IRoleService
 {

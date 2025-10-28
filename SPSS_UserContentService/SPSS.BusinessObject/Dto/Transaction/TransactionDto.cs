@@ -1,3 +1,4 @@
+
 using System;
 
 namespace SPSS.BusinessObject.Dto.Transaction
@@ -44,4 +45,5 @@ namespace SPSS.BusinessObject.Dto.Transaction
         
         public string Status { get; set; } // "Approved" or "Rejected"
     }
+
 }

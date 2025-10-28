@@ -1,9 +1,9 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SPSS.BusinessObject.Context;
 using SPSS.BusinessObject.Models;
 using SPSS.Repository.Repositories.Interfaces;
 using SPSS.Shared.Base.Implementations;
-using SPSS.Shared.Constants;
+using SPSS.Shared.Constants; // Sử dụng hằng số
 
 namespace SPSS.Repository.Repositories.Implementations;
 
@@ -17,8 +17,8 @@ public class TransactionRepository : RepositoryBase<Transaction, Guid>, ITransac
 
     public async Task<IReadOnlyCollection<Transaction>> GetPendingTransactionsAsync()
     {
-        return await ActiveTransactions 
-            .Where(t => t.Status == TransactionStatus.Pending)
+        return await ActiveTransactions
+            .Where(t => t.Status == TransactionStatus.Pending) // Dùng hằng số
             .Include(t => t.User)
             .OrderByDescending(t => t.CreatedTime)
             .ToListAsync();
@@ -26,23 +26,24 @@ public class TransactionRepository : RepositoryBase<Transaction, Guid>, ITransac
 
     public async Task<IReadOnlyCollection<Transaction>> GetTransactionsByUserIdAsync(Guid userId)
     {
-        return await ActiveTransactions 
+        return await ActiveTransactions
             .Where(t => t.UserId == userId)
+            .Include(t => t.User) // Thêm Include(User)
             .OrderByDescending(t => t.CreatedTime)
             .ToListAsync();
     }
 
     public async Task<Transaction?> GetTransactionByIdAsync(Guid id)
     {
-        return await ActiveTransactions 
+        return await ActiveTransactions
             .Include(t => t.User)
-            .FirstOrDefaultAsync(t => t.Id == id); 
+            .FirstOrDefaultAsync(t => t.Id == id);
     }
 
     public async Task<IReadOnlyCollection<Transaction>> GetTransactionsByStatusAsync(string status)
     {
         return await ActiveTransactions
-            .Where(t => t.Status == status) 
+            .Where(t => t.Status == status) // Dùng tham số string
             .Include(t => t.User)
             .OrderByDescending(t => t.CreatedTime)
             .ToListAsync();

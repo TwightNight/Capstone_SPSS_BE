@@ -1,32 +1,46 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using SPSS.BusinessObject.Dto.Authentication;
+using SPSS.BusinessObject.Models;
+using SPSS.Repository.Repositories.Interfaces;
+using SPSS.Repository.UnitOfWork.Interfaces;
+using SPSS.Service.Services.Interfaces;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using BusinessObjects.Dto.Authentication;
-using BusinessObjects.Models;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
-using Repositories.Interface;
-using Services.Interface;
 
-namespace Services.Implementation;
+// --- Giả định bạn có các Interface Repository sau ---
+// using Repositories.Interface; 
+// public interface IUserRepository : IRepositoryBase<User, Guid> { }
+// public interface IRefreshTokenRepository : IRepositoryBase<RefreshToken, Guid> 
+// {
+//     Task<RefreshToken?> GetByTokenAsync(string token);
+// }
+// ---------------------------------------------------
+
+namespace SPSS.Service.Services.Implementations;
 
 public class TokenService : ITokenService
 {
     private readonly IConfiguration _configuration;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
     private readonly TimeSpan _accessTokenExpiration;
     private readonly TimeSpan _refreshTokenExpiration;
 
-    public TokenService(IConfiguration configuration, IUnitOfWork unitOfWork)
+    public TokenService(IConfiguration configuration, IUnitOfWork unitOfWork, IMapper mapper)
     {
         _configuration = configuration;
         _unitOfWork = unitOfWork;
+        _mapper = mapper;
         _accessTokenExpiration = TimeSpan.FromDays(double.Parse(_configuration["Jwt:AccessTokenExpirationDays"] ?? "30"));
         _refreshTokenExpiration = TimeSpan.FromDays(double.Parse(_configuration["Jwt:RefreshTokenExpirationDays"] ?? "7"));
     }
 
-    public async Task<string> GenerateAccessTokenAsync(AuthUserDto user)
+    public string GenerateAccessToken(AuthUserDto user)
     {
         var claims = new List<Claim>
         {
@@ -37,7 +51,11 @@ public class TokenService : ITokenService
             new Claim("Role", user.Role ?? string.Empty)
         };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+        var jwtKey = _configuration["Jwt:Key"];
+        if (string.IsNullOrEmpty(jwtKey))
+            throw new InvalidOperationException("JWT Key is not configured in appsettings.");
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var expires = DateTime.UtcNow.Add(_accessTokenExpiration);
 
@@ -67,8 +85,11 @@ public class TokenService : ITokenService
         try
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]);
-            
+            var jwtKey = _configuration["Jwt:Key"];
+            if (string.IsNullOrEmpty(jwtKey))
+                throw new InvalidOperationException("JWT Key is not configured in appsettings.");
+
+            var key = Encoding.UTF8.GetBytes(jwtKey);
             tokenHandler.ValidateToken(token, new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
@@ -81,11 +102,10 @@ public class TokenService : ITokenService
             }, out SecurityToken validatedToken);
 
             var jwtToken = (JwtSecurityToken)validatedToken;
-            var userIdClaim = jwtToken.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
-            
-            if (int.TryParse(userIdClaim, out int id))
+            var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "Id")?.Value;
+
+            if (Guid.TryParse(userIdClaim, out userId))
             {
-                userId = Guid.Parse(userIdClaim);
                 return true;
             }
 
@@ -97,44 +117,28 @@ public class TokenService : ITokenService
         }
     }
 
-    public async Task<(string accessToken, string refreshToken)> RefreshTokenAsync(string accessToken, string refreshToken)
+    public async Task<(string accessToken, string refreshToken, AuthUserDto authUserDto)> RefreshTokenAsync(string accessToken, string refreshToken)
     {
-        // Find the refresh token in the database
-        var storedRefreshToken = await _unitOfWork.RefreshTokens.GetByTokenAsync(refreshToken);
-    
-        if (storedRefreshToken == null)
-            throw new SecurityTokenException("Invalid refresh token");
-        
-        if (storedRefreshToken.IsUsed || storedRefreshToken.IsRevoked)
-            throw new SecurityTokenException("Refresh token has been used or revoked");
-        
-        if (storedRefreshToken.ExpiryTime < DateTimeOffset.UtcNow)
-            throw new SecurityTokenException("Refresh token has expired");
+        var storedRefreshToken = await _unitOfWork.GetRepository<IRefreshTokenRepository>().GetByTokenAsync(refreshToken);
 
-        // Mark the current refresh token as used
+        if (storedRefreshToken == null || storedRefreshToken.IsUsed || storedRefreshToken.IsRevoked || storedRefreshToken.ExpiryTime < DateTimeOffset.UtcNow)
+            throw new SecurityTokenException("Invalid, used, revoked, or expired refresh token");
+
         storedRefreshToken.IsUsed = true;
-        _unitOfWork.RefreshTokens.Update(storedRefreshToken);
-    
-        // Get the user associated with the refresh token
-        var user = await _unitOfWork.Users.GetByIdAsync(storedRefreshToken.UserId);
+        _unitOfWork.GetRepository<IRefreshTokenRepository>().Update(storedRefreshToken);
+
+        var user = await _unitOfWork.GetRepository<IUserRepository>().Entities
+            .Include(u => u.Role)
+            .FirstOrDefaultAsync(u => u.UserId == storedRefreshToken.UserId);
+
         if (user == null || user.IsDeleted)
             throw new SecurityTokenException("User not found");
 
-        // Map the user to AuthUserDto
-        var authUserDto = new AuthUserDto
-        {
-            UserId = user.UserId,
-            UserName = user.UserName,
-            EmailAddress = user.EmailAddress,
-            AvatarUrl = user.AvatarUrl,
-            Role = user.Role!.RoleName // Assuming Role is included in User and accessible
-        };
+        var authUserDto = _mapper.Map<AuthUserDto>(user);
 
-        // Generate new tokens - add await here
-        var newAccessToken = await GenerateAccessTokenAsync(authUserDto);
+        var newAccessToken = GenerateAccessToken(authUserDto);
         var newRefreshToken = GenerateRefreshToken();
-    
-        // Save the new refresh token
+
         var refreshTokenEntity = new RefreshToken
         {
             Token = newRefreshToken,
@@ -144,22 +148,22 @@ public class TokenService : ITokenService
             IsRevoked = false,
             IsUsed = false
         };
-    
-        _unitOfWork.RefreshTokens.Add(refreshTokenEntity);
+
+        _unitOfWork.GetRepository<IRefreshTokenRepository>().Add(refreshTokenEntity);
         await _unitOfWork.SaveChangesAsync();
-    
-        return (newAccessToken, newRefreshToken);
+
+        return (newAccessToken, newRefreshToken, authUserDto);
     }
 
     public async Task RevokeRefreshTokenAsync(string refreshToken)
     {
-        var storedRefreshToken = await _unitOfWork.RefreshTokens.GetByTokenAsync(refreshToken);
-        
+        var storedRefreshToken = await _unitOfWork.GetRepository<IRefreshTokenRepository>().GetByTokenAsync(refreshToken);
+
         if (storedRefreshToken == null)
             throw new SecurityTokenException("Invalid refresh token");
-            
+
         storedRefreshToken.IsRevoked = true;
-        _unitOfWork.RefreshTokens.Update(storedRefreshToken);
+        _unitOfWork.GetRepository<IRefreshTokenRepository>().Update(storedRefreshToken);
         await _unitOfWork.SaveChangesAsync();
     }
 }

@@ -19,3 +19,4 @@ namespace SPSS.Service.Interfaces
         Task DeleteAsync(Guid userId, Guid id);
     }
 }
+

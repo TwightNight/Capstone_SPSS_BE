@@ -1,12 +1,11 @@
-﻿using BusinessObjects.Dto.Authentication;
+﻿using SPSS.BusinessObject.Dto.Authentication;
 
-
-namespace Services.Interface;
+namespace SPSS.Service.Services.Interface;
 
 public interface IAuthenticationService
 {
     Task<AuthenticationResponse> LoginAsync(LoginRequest loginRequest);
-    Task<TokenResponse> RefreshTokenAsync(string accessToken, string refreshToken);
+    Task<AuthenticationResponse> RefreshTokenAsync(string accessToken, string refreshToken);
     Task LogoutAsync(string refreshToken);
     Task<string> RegisterAsync(RegisterRequest registerRequest);
     Task<string> RegisterForManagerAsync(RegisterRequest registerRequest);

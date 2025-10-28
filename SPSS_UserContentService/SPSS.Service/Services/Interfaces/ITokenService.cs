@@ -1,13 +1,11 @@
-﻿using BusinessObjects.Dto.Authentication;
-using BusinessObjects.Models;
+﻿using SPSS.BusinessObject.Dto.Authentication;
 
-namespace Services.Interface;
+namespace SPSS.Service.Services.Interfaces;
 
 public interface ITokenService
 {
-    Task<string> GenerateAccessTokenAsync(AuthUserDto user);
-    string GenerateRefreshToken();
+    string GenerateAccessToken(AuthUserDto user); string GenerateRefreshToken();
     bool ValidateAccessToken(string token, out Guid userId);
-    Task<(string accessToken, string refreshToken)> RefreshTokenAsync(string accessToken, string refreshToken);
+    Task<(string accessToken, string refreshToken, AuthUserDto authUserDto)> RefreshTokenAsync(string accessToken, string refreshToken);
     Task RevokeRefreshTokenAsync(string refreshToken);
 }

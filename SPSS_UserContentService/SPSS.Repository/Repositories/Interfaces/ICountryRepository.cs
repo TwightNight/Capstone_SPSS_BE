@@ -3,7 +3,7 @@ using SPSS.Shared.Base.Interfaces;
 
 namespace SPSS.Repository.Repositories.Interfaces;
 
-public interface ICountryRepository : IRepositoryBase<Country, Guid>
+public interface ICountryRepository : IRepositoryBase<Country, int>
 {
 }
 
