@@ -1,6 +1,5 @@
-﻿using BusinessObjects.Dto.Address;
-using BusinessObjects.Dto.Blog;
-using Services.Response;
+﻿using SPSS.BusinessObject.Dto.Blog;
+using SPSS.Shared.Responses;
 
 namespace SPSS.Service.Services.Interfaces;
 

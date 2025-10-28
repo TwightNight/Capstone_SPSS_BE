@@ -6,7 +6,7 @@ using SPSS.Shared.Base.Implementations;
 
 namespace SPSS.Repository.Repositories.Implementations;
 
-public class CountryRepository : RepositoryBase<Country, Guid> , ICountryRepository
+public class CountryRepository : RepositoryBase<Country, int> , ICountryRepository
 {
     public CountryRepository(UserDBContext context) : base(context)
     {

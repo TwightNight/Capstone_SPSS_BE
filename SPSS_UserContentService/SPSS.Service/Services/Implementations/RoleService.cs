@@ -1,11 +1,20 @@
 using AutoMapper;
-using BusinessObjects.Dto.Role;
-using BusinessObjects.Models;
-using Repositories.Interface;
-using Services.Interface;
-using Services.Response;
+using SPSS.BusinessObject.Dto.Role;
+using SPSS.BusinessObject.Models;
+using SPSS.Repository.Repositories.Interfaces;
+using SPSS.Repository.UnitOfWork.Interfaces;
+using SPSS.Service.Services.Interfaces;
+using SPSS.Shared.Responses;
 
-namespace Services.Implementation;
+// --- Giả định bạn có các Interface Repository sau ---
+// using Repositories.Interface; 
+// public interface IRoleRepository : IRepositoryBase<Role, Guid> 
+// {
+//     Task<Role?> GetRoleByNameAsync(string roleName);
+// }
+// ---------------------------------------------------
+
+namespace SPSS.Service.Services.Implementations;
 
 public class RoleService : IRoleService
 {
@@ -20,7 +29,7 @@ public class RoleService : IRoleService
 
     public async Task<RoleDto> GetByIdAsync(Guid id)
     {
-        var role = await _unitOfWork.Roles.GetByIdAsync(id);
+        var role = await _unitOfWork.GetRepository<IRoleRepository>().GetByIdAsync(id);
         if (role == null)
             throw new KeyNotFoundException($"Role with ID {id} not found.");
         return _mapper.Map<RoleDto>(role);
@@ -28,15 +37,18 @@ public class RoleService : IRoleService
 
     public async Task<PagedResponse<RoleDto>> GetPagedAsync(int pageNumber, int pageSize)
     {
-        var (roles, totalCount) = await _unitOfWork.Roles.GetPagedAsync(pageNumber, pageSize, null);
+        var (roles, totalCount) = await _unitOfWork.GetRepository<IRoleRepository>().GetPagedAsync(pageNumber, pageSize, null);
+
+        // roleDtos là kiểu IEnumerable<RoleDto>
         var roleDtos = _mapper.Map<IEnumerable<RoleDto>>(roles);
-        return new PagedResponse<RoleDto>
-        {
-            Items = roleDtos,
-            TotalCount = totalCount,
-            PageNumber = pageNumber,
-            PageSize = pageSize
-        };
+
+        // Gọi thẳng constructor, nó sẽ tự xử lý .ToList().AsReadOnly()
+        return new PagedResponse<RoleDto>(
+            roleDtos,
+            totalCount,
+            pageNumber,
+            pageSize
+        );
     }
 
     public async Task<RoleDto> CreateAsync(RoleForCreationDto? roleForCreationDto)
@@ -44,26 +56,13 @@ public class RoleService : IRoleService
         if (roleForCreationDto is null)
             throw new ArgumentNullException(nameof(roleForCreationDto), "Role data cannot be null.");
 
-        // Manual mapping from RoleForCreationDto to Role
-        var role = new Role
-        {
-            RoleId = Guid.NewGuid(), // Assuming RoleId is generated during creation
-            RoleName = roleForCreationDto.RoleName,
-            Description = roleForCreationDto.Description,
-        };
+        var role = _mapper.Map<Role>(roleForCreationDto);
+        role.RoleId = Guid.NewGuid();
 
-        _unitOfWork.Roles.Add(role);
+        _unitOfWork.GetRepository<IRoleRepository>().Add(role);
         await _unitOfWork.SaveChangesAsync();
 
-        // Manual mapping from Role to RoleDto
-        var roleDto = new RoleDto
-        {
-            RoleId = role.RoleId,
-            RoleName = role.RoleName,
-            Description = role.Description,
-        };
-
-        return roleDto;
+        return _mapper.Map<RoleDto>(role);
     }
 
     public async Task<RoleDto> UpdateAsync(Guid roleId, RoleForUpdateDto roleForUpdateDto)
@@ -71,7 +70,7 @@ public class RoleService : IRoleService
         if (roleForUpdateDto is null)
             throw new ArgumentNullException(nameof(roleForUpdateDto), "Role data cannot be null.");
 
-        var role = await _unitOfWork.Roles.GetByIdAsync(roleId);
+        var role = await _unitOfWork.GetRepository<IRoleRepository>().GetByIdAsync(roleId);
         if (role == null)
             throw new KeyNotFoundException($"Role with ID {roleId} not found.");
 
@@ -80,23 +79,23 @@ public class RoleService : IRoleService
         return _mapper.Map<RoleDto>(role);
     }
 
-   
+
     public async Task DeleteAsync(Guid id)
     {
-        var role = await _unitOfWork.Roles.GetByIdAsync(id);
+        var role = await _unitOfWork.GetRepository<IRoleRepository>().GetByIdAsync(id);
         if (role == null)
             throw new KeyNotFoundException($"Role with ID {id} not found.");
 
-        _unitOfWork.Roles.Update(role);
+        _unitOfWork.GetRepository<IRoleRepository>().Delete(role);
         await _unitOfWork.SaveChangesAsync();
     }
-    
+
     public async Task<RoleDto> GetByNameAsync(string roleName)
     {
-        var role = await _unitOfWork.Roles.GetRoleByNameAsync(roleName);
+        var role = await _unitOfWork.GetRepository<IRoleRepository>().GetRoleByNameAsync(roleName);
         if (role == null)
             throw new KeyNotFoundException($"Role {roleName} không tồn tại");
-    
+
         return _mapper.Map<RoleDto>(role);
     }
 }

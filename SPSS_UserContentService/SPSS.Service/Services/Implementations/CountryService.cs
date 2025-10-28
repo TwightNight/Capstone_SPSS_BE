@@ -1,9 +1,10 @@
 ﻿using AutoMapper;
-using BusinessObjects.Dto.Country;
-using BusinessObjects.Models;
-using Microsoft.EntityFrameworkCore;
-using Repositories.Interface;
-using Services.Interface;
+
+using SPSS.BusinessObject.Dto.Country;
+using SPSS.BusinessObject.Models;
+using SPSS.Repository.Repositories.Interfaces;
+using SPSS.Repository.UnitOfWork.Interfaces;
+using SPSS.Service.Services.Interfaces;
 
 namespace SPSS.Service.Services.Implementations;
 
@@ -11,16 +12,23 @@ public class CountryService : ICountryService
 {
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ICountryRepository _countryRepo;
+    private readonly IAddressRepository _addressRepo; // Cần để kiểm tra khi xóa
 
     public CountryService(IMapper mapper, IUnitOfWork unitOfWork)
     {
         _mapper = mapper;
         _unitOfWork = unitOfWork;
+
+        // Sử dụng đúng UoW pattern
+        _countryRepo = _unitOfWork.GetRepository<ICountryRepository>();
+        _addressRepo = _unitOfWork.GetRepository<IAddressRepository>();
     }
 
     public async Task<CountryDto> GetByIdAsync(int id)
     {
-        var country = await _unitOfWork.Countries.Entities.FirstOrDefaultAsync(c => c.Id == id);
+        // Dùng repo
+        var country = await _countryRepo.GetByIdAsync(id);
         if (country == null)
             throw new KeyNotFoundException($"Country with ID {id} not found.");
 
@@ -29,7 +37,8 @@ public class CountryService : ICountryService
 
     public async Task<IEnumerable<CountryDto>> GetAllAsync()
     {
-        var countries = await _unitOfWork.Countries.Entities.ToListAsync();
+        // Dùng repo
+        var countries = await _countryRepo.GetAsync();
         return _mapper.Map<IEnumerable<CountryDto>>(countries);
     }
 
@@ -38,11 +47,21 @@ public class CountryService : ICountryService
         if (countryForCreationDto == null)
             throw new ArgumentNullException(nameof(countryForCreationDto), "Country data cannot be null.");
 
-        var country = _mapper.Map<Country>(countryForCreationDto);
-        _unitOfWork.Countries.Add(country);
+        // Logic nghiệp vụ: Kiểm tra trùng lặp
+        var codeExists = await _countryRepo.ExistsAsync(c => c.CountryCode == countryForCreationDto.CountryCode);
+        if (codeExists)
+            throw new InvalidOperationException($"Country code '{countryForCreationDto.CountryCode}' already exists.");
 
+        var nameExists = await _countryRepo.ExistsAsync(c => c.CountryName == countryForCreationDto.CountryName);
+        if (nameExists)
+            throw new InvalidOperationException($"Country name '{countryForCreationDto.CountryName}' already exists.");
+
+        var country = _mapper.Map<Country>(countryForCreationDto);
+
+        _countryRepo.Add(country);
         await _unitOfWork.SaveChangesAsync();
 
+        // EF sẽ tự động điền 'country.Id' sau khi SaveChanges
         return _mapper.Map<CountryDto>(country);
     }
 
@@ -51,18 +70,23 @@ public class CountryService : ICountryService
         if (countryForUpdateDto == null)
             throw new ArgumentNullException(nameof(countryForUpdateDto), "Country data cannot be null.");
 
-        // Check if the country exists
-        var country = await _unitOfWork.Countries.Entities.FirstOrDefaultAsync(c => c.Id == countryId);
+        var country = await _countryRepo.GetByIdAsync(countryId);
         if (country == null)
             throw new KeyNotFoundException($"Country with ID {countryId} not found.");
 
-        // Map the updated fields to the existing entity
+        // Logic nghiệp vụ: Kiểm tra trùng lặp (ngoại trừ chính nó)
+        var codeExists = await _countryRepo.ExistsAsync(c => c.CountryCode == countryForUpdateDto.CountryCode && c.Id != countryId);
+        if (codeExists)
+            throw new InvalidOperationException($"Country code '{countryForUpdateDto.CountryCode}' already exists.");
+
+        var nameExists = await _countryRepo.ExistsAsync(c => c.CountryName == countryForUpdateDto.CountryName && c.Id != countryId);
+        if (nameExists)
+            throw new InvalidOperationException($"Country name '{countryForUpdateDto.CountryName}' already exists.");
+
+        // Map DTO vào entity đã tồn tại
         _mapper.Map(countryForUpdateDto, country);
 
-        // Update the entity in the repository
-        _unitOfWork.Countries.Update(country);
-
-        // Save changes
+        _countryRepo.Update(country);
         await _unitOfWork.SaveChangesAsync();
 
         return _mapper.Map<CountryDto>(country);
@@ -70,12 +94,17 @@ public class CountryService : ICountryService
 
     public async Task DeleteAsync(int id)
     {
-        var country = await _unitOfWork.Countries.Entities.FirstOrDefaultAsync(c => c.Id == id);
+        var country = await _countryRepo.GetByIdAsync(id);
         if (country == null)
             throw new KeyNotFoundException($"Country with ID {id} not found.");
 
-        _unitOfWork.Countries.Delete(country);
+        // Logic nghiệp vụ (QUAN TRỌNG): Kiểm tra xem quốc gia có đang được sử dụng không
+        var isUsed = await _addressRepo.ExistsAsync(a => a.CountryId == id && !a.IsDeleted);
+        if (isUsed)
+            throw new InvalidOperationException("Cannot delete country. It is currently in use by one or more addresses.");
 
+        // Chỉ xóa khi không được sử dụng
+        _countryRepo.Delete(country);
         await _unitOfWork.SaveChangesAsync();
     }
 }
