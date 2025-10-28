@@ -58,7 +58,7 @@ public class AuthenticationService : IAuthenticationService
 
         var authUserDto = _mapper.Map<AuthUserDto>(user);
 
-        var accessToken = await _tokenService.GenerateAccessTokenAsync(authUserDto);
+        var accessToken = await _tokenService.GenerateAccessToken(authUserDto);
         var refreshToken = _tokenService.GenerateRefreshToken();
 
         var refreshTokenEntity = new RefreshToken
