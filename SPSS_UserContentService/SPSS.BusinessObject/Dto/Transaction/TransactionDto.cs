@@ -30,20 +30,4 @@ namespace SPSS.BusinessObject.Dto.Transaction
         public DateTimeOffset? ApprovedTime { get; set; }
     }
 
-    public class CreateTransactionDto
-    {
-        public string TransactionType { get; set; }
-        
-        public decimal Amount { get; set; }
-        
-        public string Description { get; set; }
-    }
-
-    public class UpdateTransactionStatusDto
-    {
-        public Guid TransactionId { get; set; }
-        
-        public string Status { get; set; } // "Approved" or "Rejected"
-    }
-
 }
