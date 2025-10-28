@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using BusinessObjects.Dto.Transaction;
 using SPSS.BusinessObject.Dto.Transaction;
 using SPSS.BusinessObject.Models;
 using SPSS.Shared.Constants;

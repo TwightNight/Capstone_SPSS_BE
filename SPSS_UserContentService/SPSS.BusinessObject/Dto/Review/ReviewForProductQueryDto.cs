@@ -1,4 +1,4 @@
-﻿using BusinessObjects.Dto.Reply;
+﻿using SPSS.BusinessObject.Dto.Reply;
 
 namespace SPSS.BusinessObject.Dto.Review
 {
