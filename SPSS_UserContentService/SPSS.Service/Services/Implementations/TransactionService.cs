@@ -336,7 +336,7 @@ namespace SPSS.Service.Implementations
             }
         }
 
-        public async Task<PagedResponse<TransactionDto>> GetPagedTransactionsAsync(int pageNumber, int pageSize, string status = null)
+        public async Task<PagedResponse<TransactionDto>> GetPagedTransactionsAsync(int pageNumber, int pageSize, string? status = null)
         {
             try
             {

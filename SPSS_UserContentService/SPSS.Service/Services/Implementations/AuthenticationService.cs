@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using Services.Interface;
 using SPSS.BusinessObject.Dto.Authentication;
 using SPSS.BusinessObject.Dto.Role;
 using SPSS.BusinessObject.Dto.User;
@@ -58,7 +57,7 @@ public class AuthenticationService : IAuthenticationService
 
         var authUserDto = _mapper.Map<AuthUserDto>(user);
 
-        var accessToken = await _tokenService.GenerateAccessToken(authUserDto);
+        var accessToken =  _tokenService.GenerateAccessToken(authUserDto);
         var refreshToken = _tokenService.GenerateRefreshToken();
 
         var refreshTokenEntity = new RefreshToken
