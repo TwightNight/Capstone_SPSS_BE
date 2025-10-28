@@ -7,163 +7,160 @@ using SPSS.BusinessObject.Models;
 using SPSS.Repository.Repositories.Interfaces;
 using SPSS.Repository.UnitOfWork.Interfaces;
 using SPSS.Service.Services.Interfaces;
+using SPSS.Shared.Constants;
+using System;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-
-// --- Giả định bạn có các Interface Repository sau ---
-// using Repositories.Interface; 
-// public interface IUserRepository : IRepositoryBase<User, Guid> { }
-// public interface IRefreshTokenRepository : IRepositoryBase<RefreshToken, Guid> 
-// {
-//     Task<RefreshToken?> GetByTokenAsync(string token);
-// }
-// ---------------------------------------------------
+using System.Threading.Tasks;
 
 namespace SPSS.Service.Services.Implementations;
 
 public class TokenService : ITokenService
 {
-    private readonly IConfiguration _configuration;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
-    private readonly TimeSpan _accessTokenExpiration;
-    private readonly TimeSpan _refreshTokenExpiration;
+	private readonly IConfiguration _configuration;
+	private readonly IUnitOfWork _unitOfWork;
+	private readonly IMapper _mapper;
+	private readonly TimeSpan _accessTokenExpiration;
+	private readonly TimeSpan _refreshTokenExpiration;
 
-    public TokenService(IConfiguration configuration, IUnitOfWork unitOfWork, IMapper mapper)
-    {
-        _configuration = configuration;
-        _unitOfWork = unitOfWork;
-        _mapper = mapper;
-        _accessTokenExpiration = TimeSpan.FromDays(double.Parse(_configuration["Jwt:AccessTokenExpirationDays"] ?? "30"));
-        _refreshTokenExpiration = TimeSpan.FromDays(double.Parse(_configuration["Jwt:RefreshTokenExpirationDays"] ?? "7"));
-    }
+	public TokenService(IConfiguration configuration, IUnitOfWork unitOfWork, IMapper mapper)
+	{
+		_configuration = configuration;
+		_unitOfWork = unitOfWork;
+		_mapper = mapper;
+		_accessTokenExpiration = TimeSpan.FromDays(double.Parse(_configuration["Jwt:AccessTokenExpirationDays"] ?? "30"));
+		_refreshTokenExpiration = TimeSpan.FromDays(double.Parse(_configuration["Jwt:RefreshTokenExpirationDays"] ?? "7"));
+	}
 
-    public string GenerateAccessToken(AuthUserDto user)
-    {
-        var claims = new List<Claim>
-        {
-            new Claim("Id", user.UserId.ToString()),
-            new Claim("UserName", user.UserName),
-            new Claim("Email", user.EmailAddress),
-            new Claim("AvatarUrl", user.AvatarUrl ?? string.Empty),
-            new Claim("Role", user.Role ?? string.Empty)
-        };
+	public string GenerateAccessToken(AuthUserDto user)
+	{
+		var claims = new List<Claim>
+		{
+			new Claim("Id", user.UserId.ToString()),
+			new Claim("UserName", user.UserName),
+			new Claim("Email", user.EmailAddress),
+			new Claim("AvatarUrl", user.AvatarUrl ?? string.Empty),
+			new Claim("Role", user.Role ?? string.Empty)
+		};
 
-        var jwtKey = _configuration["Jwt:Key"];
-        if (string.IsNullOrEmpty(jwtKey))
-            throw new InvalidOperationException("JWT Key is not configured in appsettings.");
+		var jwtKey = _configuration["Jwt:Key"];
+		if (string.IsNullOrEmpty(jwtKey))
+			throw new InvalidOperationException(ExceptionMessageConstants.Token.JwtKeyNotConfigured);
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
-        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-        var expires = DateTime.UtcNow.Add(_accessTokenExpiration);
+		var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+		var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+		var expires = DateTime.UtcNow.Add(_accessTokenExpiration);
 
-        var token = new JwtSecurityToken(
-            issuer: _configuration["Jwt:Issuer"],
-            audience: _configuration["Jwt:Audience"],
-            claims: claims,
-            expires: expires,
-            signingCredentials: credentials
-        );
+		var token = new JwtSecurityToken(
+			issuer: _configuration["Jwt:Issuer"],
+			audience: _configuration["Jwt:Audience"],
+			claims: claims,
+			expires: expires,
+			signingCredentials: credentials
+		);
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
-    }
+		return new JwtSecurityTokenHandler().WriteToken(token);
+	}
 
-    public string GenerateRefreshToken()
-    {
-        var randomNumber = new byte[64];
-        using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(randomNumber);
-        return Convert.ToBase64String(randomNumber);
-    }
+	public string GenerateRefreshToken()
+	{
+		var randomNumber = new byte[64];
+		using var rng = RandomNumberGenerator.Create();
+		rng.GetBytes(randomNumber);
+		return Convert.ToBase64String(randomNumber);
+	}
 
-    public bool ValidateAccessToken(string token, out Guid userId)
-    {
-        userId = Guid.Empty;
+	public bool ValidateAccessToken(string token, out Guid userId)
+	{
+		userId = Guid.Empty;
 
-        try
-        {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var jwtKey = _configuration["Jwt:Key"];
-            if (string.IsNullOrEmpty(jwtKey))
-                throw new InvalidOperationException("JWT Key is not configured in appsettings.");
+		try
+		{
+			var tokenHandler = new JwtSecurityTokenHandler();
+			var jwtKey = _configuration["Jwt:Key"];
+			if (string.IsNullOrEmpty(jwtKey))
+				throw new InvalidOperationException(ExceptionMessageConstants.Token.JwtKeyNotConfigured);
 
-            var key = Encoding.UTF8.GetBytes(jwtKey);
-            tokenHandler.ValidateToken(token, new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(key),
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidIssuer = _configuration["Jwt:Issuer"],
-                ValidAudience = _configuration["Jwt:Audience"],
-                ClockSkew = TimeSpan.Zero
-            }, out SecurityToken validatedToken);
+			var key = Encoding.UTF8.GetBytes(jwtKey);
+			tokenHandler.ValidateToken(token, new TokenValidationParameters
+			{
+				ValidateIssuerSigningKey = true,
+				IssuerSigningKey = new SymmetricSecurityKey(key),
+				ValidateIssuer = true,
+				ValidateAudience = true,
+				ValidIssuer = _configuration["Jwt:Issuer"],
+				ValidAudience = _configuration["Jwt:Audience"],
+				ClockSkew = TimeSpan.Zero
+			}, out SecurityToken validatedToken);
 
-            var jwtToken = (JwtSecurityToken)validatedToken;
-            var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "Id")?.Value;
+			var jwtToken = (JwtSecurityToken)validatedToken;
+			var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "Id")?.Value;
 
-            if (Guid.TryParse(userIdClaim, out userId))
-            {
-                return true;
-            }
 
-            return false;
-        }
-        catch
-        {
-            return false;
-        }
-    }
+			if (Guid.TryParse(userIdClaim, out userId))
+			{
+				return true;
+			}
 
-    public async Task<(string accessToken, string refreshToken, AuthUserDto authUserDto)> RefreshTokenAsync(string accessToken, string refreshToken)
-    {
-        var storedRefreshToken = await _unitOfWork.GetRepository<IRefreshTokenRepository>().GetByTokenAsync(refreshToken);
+			return false;
+		}
+		catch
+		{
+			return false;
+		}
+	}
 
-        if (storedRefreshToken == null || storedRefreshToken.IsUsed || storedRefreshToken.IsRevoked || storedRefreshToken.ExpiryTime < DateTimeOffset.UtcNow)
-            throw new SecurityTokenException("Invalid, used, revoked, or expired refresh token");
+	public async Task<(string accessToken, string refreshToken, AuthUserDto authUserDto)> RefreshTokenAsync(string accessToken, string refreshToken)
+	{
+		var storedRefreshToken = await _unitOfWork.GetRepository<IRefreshTokenRepository>().GetByTokenAsync(refreshToken);
 
-        storedRefreshToken.IsUsed = true;
-        _unitOfWork.GetRepository<IRefreshTokenRepository>().Update(storedRefreshToken);
+		if (storedRefreshToken == null || storedRefreshToken.IsUsed || storedRefreshToken.IsRevoked || storedRefreshToken.ExpiryTime < DateTimeOffset.UtcNow)
+			throw new SecurityTokenException(ExceptionMessageConstants.Token.InvalidRefreshToken);
 
-        var user = await _unitOfWork.GetRepository<IUserRepository>().Entities
-            .Include(u => u.Role)
-            .FirstOrDefaultAsync(u => u.UserId == storedRefreshToken.UserId);
+		storedRefreshToken.IsUsed = true;
+		_unitOfWork.GetRepository<IRefreshTokenRepository>().Update(storedRefreshToken);
 
-        if (user == null || user.IsDeleted)
-            throw new SecurityTokenException("User not found");
+		var user = await _unitOfWork.GetRepository<IUserRepository>().Entities
+			.Include(u => u.Role)
+			.FirstOrDefaultAsync(u => u.UserId == storedRefreshToken.UserId);
 
-        var authUserDto = _mapper.Map<AuthUserDto>(user);
+		if (user == null || user.IsDeleted)
+			throw new SecurityTokenException(ExceptionMessageConstants.Token.UserNotFound);
 
-        var newAccessToken = GenerateAccessToken(authUserDto);
-        var newRefreshToken = GenerateRefreshToken();
+		var authUserDto = _mapper.Map<AuthUserDto>(user);
 
-        var refreshTokenEntity = new RefreshToken
-        {
-            Token = newRefreshToken,
-            UserId = user.UserId,
-            ExpiryTime = DateTime.UtcNow.Add(_refreshTokenExpiration),
-            Created = DateTime.UtcNow,
-            IsRevoked = false,
-            IsUsed = false
-        };
+		var newAccessToken = GenerateAccessToken(authUserDto);
+		var newRefreshToken = GenerateRefreshToken();
 
-        _unitOfWork.GetRepository<IRefreshTokenRepository>().Add(refreshTokenEntity);
-        await _unitOfWork.SaveChangesAsync();
+		var refreshTokenEntity = new RefreshToken
+		{
+			Token = newRefreshToken,
+			UserId = user.UserId,
+			ExpiryTime = DateTime.UtcNow.Add(_refreshTokenExpiration),
+			Created = DateTime.UtcNow,
+			IsRevoked = false,
+			IsUsed = false
+		};
 
-        return (newAccessToken, newRefreshToken, authUserDto);
-    }
+		_unitOfWork.GetRepository<IRefreshTokenRepository>().Add(refreshTokenEntity);
+		await _unitOfWork.SaveChangesAsync();
 
-    public async Task RevokeRefreshTokenAsync(string refreshToken)
-    {
-        var storedRefreshToken = await _unitOfWork.GetRepository<IRefreshTokenRepository>().GetByTokenAsync(refreshToken);
+		return (newAccessToken, newRefreshToken, authUserDto);
+	}
 
-        if (storedRefreshToken == null)
-            throw new SecurityTokenException("Invalid refresh token");
+	public async Task RevokeRefreshTokenAsync(string refreshToken)
+	{
+		var storedRefreshToken = await _unitOfWork.GetRepository<IRefreshTokenRepository>().GetByTokenAsync(refreshToken);
 
-        storedRefreshToken.IsRevoked = true;
-        _unitOfWork.GetRepository<IRefreshTokenRepository>().Update(storedRefreshToken);
-        await _unitOfWork.SaveChangesAsync();
-    }
+		if (storedRefreshToken == null)
+			throw new SecurityTokenException(ExceptionMessageConstants.Token.InvalidRefreshTokenSimple);
+
+		storedRefreshToken.IsRevoked = true;
+		_unitOfWork.GetRepository<IRefreshTokenRepository>().Update(storedRefreshToken);
+		await _unitOfWork.SaveChangesAsync();
+	}
 }
