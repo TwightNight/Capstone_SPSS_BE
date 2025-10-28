@@ -1,10 +1,10 @@
-using BusinessObjects.Dto.Transaction;
-using Services.Response;
+using SPSS.BusinessObject.Dto.Transaction;
+using SPSS.Shared.Responses;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Services.Interface
+namespace SPSS.Service.Interfaces
 {
     public interface ITransactionService
     {

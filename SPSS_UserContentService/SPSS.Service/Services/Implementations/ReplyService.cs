@@ -1,34 +1,38 @@
 ﻿using AutoMapper;
-using BusinessObjects.Dto.Reply;
-using BusinessObjects.Models;
 using Microsoft.EntityFrameworkCore;
-using Repositories.Interface;
-using Services.Interface;
-using Services.Response;
+using SPSS.Service.Interfaces;
+using SPSS.BusinessObject.Dto.Reply;
+using SPSS.BusinessObject.Models;
+using SPSS.Repository.Repositories.Interfaces;
+using SPSS.Repository.UnitOfWork.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 
-namespace Services.Implementation
+namespace SPSS.Service.Implementations
 {
     public class ReplyService : IReplyService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+		private readonly IReviewRepository _reviewRepository;
+		private readonly IReplyRepository _replyRepository;
 
-        public ReplyService(IUnitOfWork unitOfWork, IMapper mapper)
+		public ReplyService(IUnitOfWork unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
-        }
+			_reviewRepository = _unitOfWork.GetRepository<IReviewRepository>();
+			_replyRepository = _unitOfWork.GetRepository<IReplyRepository>();
+		}
         public async Task<ReplyDto> CreateAsync(Guid userId, ReplyForCreationDto replyDto)
         {
             if (replyDto == null)
                 throw new ArgumentNullException(nameof(replyDto), "Reply data cannot be null.");
 
             // Check if the reviewId exists
-            var reviewExists = await _unitOfWork.Reviews.Entities.AnyAsync(r => r.Id == replyDto.ReviewId);
+            var reviewExists = await _reviewRepository.Entities.AnyAsync(r => r.Id == replyDto.ReviewId);
             if (!reviewExists)
                 throw new ArgumentException("The specified reviewId does not exist.", nameof(replyDto.ReviewId));
 
@@ -46,8 +50,8 @@ namespace Services.Implementation
                 IsDeleted = false
             };
 
-            // Add the reply to the database
-            _unitOfWork.Replies.Add(reply);
+			// Add the reply to the database
+			_replyRepository.Add(reply);
             await _unitOfWork.SaveChangesAsync();
 
             // Manual mapping of ReplyDto for return
@@ -65,14 +69,14 @@ namespace Services.Implementation
             if (replyDto == null)
                 throw new ArgumentNullException(nameof(replyDto), "Reply data cannot be null.");
 
-            var reply = await _unitOfWork.Replies.GetByIdAsync(id);
+            var reply = await _replyRepository.GetByIdAsync(id);
             if (reply == null)
                 throw new KeyNotFoundException($"Reply with ID {id} not found.");
 
             _mapper.Map(replyDto, reply);
             reply.LastUpdatedTime = DateTimeOffset.UtcNow;
             reply.LastUpdatedBy = userId.ToString();
-            _unitOfWork.Replies.Update(reply);
+            _replyRepository.Update(reply);
             await _unitOfWork.SaveChangesAsync();
 
             return _mapper.Map<ReplyDto>(reply);
@@ -80,11 +84,11 @@ namespace Services.Implementation
 
         public async Task DeleteAsync(Guid userId, Guid id)
         {
-            var reply = await _unitOfWork.Replies.GetByIdAsync(id);
+            var reply = await _replyRepository.GetByIdAsync(id);
             if (reply == null)
                 throw new KeyNotFoundException($"Reply with ID {id} not found.");
 
-            _unitOfWork.Replies.Delete(reply);
+            _replyRepository.Delete(reply);
             await _unitOfWork.SaveChangesAsync();
         }
     }

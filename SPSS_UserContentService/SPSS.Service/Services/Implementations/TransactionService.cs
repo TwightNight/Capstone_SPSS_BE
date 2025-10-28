@@ -1,11 +1,6 @@
-﻿using BusinessObjects.Dto.Transaction;
-using BusinessObjects.Models;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Repositories.Interface;
-using Services.Interface;
-using Services.Response;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,15 +8,23 @@ using System.Threading.Tasks;
 using QRCoder;
 using System.Drawing;
 using System.IO;
+using SPSS.Service.Interfaces;
+using SPSS.Repository.UnitOfWork.Interfaces;
+using SPSS.BusinessObject.Dto.Transaction;
+using SPSS.BusinessObject.Models;
+using SPSS.Repository.Repositories.Interfaces;
+using SPSS.Shared.Responses;
 
-namespace Services.Implementation
+namespace SPSS.Service.Implementations
 {
     public class TransactionService : ITransactionService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IConfiguration _configuration;
+        private readonly ITransactionRepository _transactionRepository;
+        private readonly IUserRepository _userRepository;
+		private readonly IConfiguration _configuration;
         private readonly ILogger<TransactionService> _logger;
-        private readonly ManageFirebaseImage.ManageFirebaseImageService _firebaseImageService;
+        //private readonly ManageFirebaseImage.ManageFirebaseImageService _firebaseImageService;
 
         // Banking information read from configuration
         private readonly string _bankInformation;
@@ -34,10 +37,12 @@ namespace Services.Implementation
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _firebaseImageService = new ManageFirebaseImage.ManageFirebaseImageService();
-            
-            // Load banking information from configuration
-            var bankName = _configuration["Banking:BankName"] ?? "MBBANK";
+			_transactionRepository = _unitOfWork.GetRepository<ITransactionRepository>();
+			_userRepository = _unitOfWork.GetRepository<IUserRepository>();
+			//_firebaseImageService = new ManageFirebaseImage.ManageFirebaseImageService();
+
+			// Load banking information from configuration
+			var bankName = _configuration["Banking:BankName"] ?? "MBBANK";
             var accountNumber = _configuration["Banking:AccountNumber"] ?? "0358696560";
             var accountName = _configuration["Banking:AccountName"] ?? "NGUYEN NGOC SON";
             var branch = _configuration["Banking:Branch"] ?? "";
@@ -75,12 +80,12 @@ namespace Services.Implementation
                     LastUpdatedTime = DateTimeOffset.UtcNow,
                     IsDeleted = false
                 };
-                
-                _unitOfWork.Transactions.Add(transaction);
+
+				_transactionRepository.Add(transaction);
                 await _unitOfWork.SaveChangesAsync();
                 
                 // Get user information
-                var user = await _unitOfWork.Users.Entities
+                var user = await _userRepository.Entities
                     .FirstOrDefaultAsync(u => u.UserId == userId);
                 
                 if (user == null)
@@ -174,9 +179,11 @@ namespace Services.Implementation
 
                         // Tải lên Firebase
                         string fileName = $"qr-codes/payment-{Guid.NewGuid()}.png";
-                        string imageUrl = await _firebaseImageService.UploadFileAsync(stream, fileName);
+						//string imageUrl = await _firebaseImageService.UploadFileAsync(stream, fileName);
+						string imageUrl = "";
 
-                        return imageUrl;
+
+						return imageUrl;
                     }
                 }
             }
@@ -262,7 +269,7 @@ namespace Services.Implementation
         {
             try
             {
-                var transaction = await _unitOfWork.Transactions.GetTransactionByIdAsync(id);
+                var transaction = await _transactionRepository.GetTransactionByIdAsync(id);
                 
                 if (transaction == null)
                 {
@@ -296,9 +303,9 @@ namespace Services.Implementation
         {
             try
             {
-                var transactions = await _unitOfWork.Transactions.GetTransactionsByUserIdAsync(userId);
+                var transactions = await _transactionRepository.GetTransactionsByUserIdAsync(userId);
                 
-                var user = await _unitOfWork.Users.Entities
+                var user = await _userRepository.Entities
                     .FirstOrDefaultAsync(u => u.UserId == userId);
                 
                 if (user == null)
@@ -337,11 +344,11 @@ namespace Services.Implementation
                 IEnumerable<Transaction> transactions;
                 if (!string.IsNullOrEmpty(status))
                 {
-                    transactions = await _unitOfWork.Transactions.GetTransactionsByStatusAsync(status);
+                    transactions = await _transactionRepository.GetTransactionsByStatusAsync(status);
                 }
                 else
                 {
-                    transactions = await _unitOfWork.Transactions.Entities
+                    transactions = await _transactionRepository.Entities
                         .Where(t => !t.IsDeleted)
                         .Include(t => t.User)
                         .OrderByDescending(t => t.CreatedTime)
@@ -376,12 +383,12 @@ namespace Services.Implementation
                 
                 // Return paged response
                 return new PagedResponse<TransactionDto>
-                {
-                    Items = transactionDtos,
-                    TotalCount = totalCount,
-                    PageNumber = pageNumber,
-                    PageSize = pageSize
-                };
+                (
+                    transactionDtos,
+                    totalCount,
+                    pageNumber,
+                    pageSize
+                );
             }
             catch (Exception ex)
             {
@@ -401,7 +408,7 @@ namespace Services.Implementation
                 }
                 
                 // Get transaction
-                var transaction = await _unitOfWork.Transactions.GetTransactionByIdAsync(dto.TransactionId);
+                var transaction = await _transactionRepository.GetTransactionByIdAsync(dto.TransactionId);
                 
                 if (transaction == null)
                 {
@@ -419,8 +426,8 @@ namespace Services.Implementation
                     transaction.ApprovedBy = adminId;
                     transaction.ApprovedTime = DateTimeOffset.UtcNow;
                 }
-                
-                _unitOfWork.Transactions.Update(transaction);
+
+				_transactionRepository.Update(transaction);
                 await _unitOfWork.SaveChangesAsync();
                 
                 // Return updated transaction

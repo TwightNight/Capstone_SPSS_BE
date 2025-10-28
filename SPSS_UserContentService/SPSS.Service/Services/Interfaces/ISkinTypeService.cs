@@ -1,8 +1,7 @@
-﻿using BusinessObjects.Dto.Address;
-using BusinessObjects.Dto.SkinType;
-using Services.Response;
+﻿using SPSS.BusinessObject.Dto.SkinType;
+using SPSS.Shared.Responses;
 
-namespace Services.Interface;
+namespace SPSS.Service.Interfaces;
 
 public interface ISkinTypeService
 {
@@ -10,5 +9,5 @@ public interface ISkinTypeService
     Task<PagedResponse<SkinTypeDto>> GetPagedAsync(int pageNumber, int pageSize);
     Task<bool> CreateAsync(SkinTypeForCreationDto? skinTypeForCreationDto, Guid userId);
     Task<SkinTypeWithDetailDto> UpdateAsync(Guid addressId, SkinTypeForUpdateDto skinTypeForUpdateDto);
-    Task DeleteAsync(Guid id);
+    //Task DeleteAsync(Guid id);
 }
