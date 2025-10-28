@@ -1,35 +1,30 @@
 ﻿using AutoMapper;
-using BusinessObjects.Dto.Product;
-using BusinessObjects.Dto.ProductCategory;
-using BusinessObjects.Dto.SkincareRoutinStep;
-using BusinessObjects.Dto.SkinType;
-using BusinessObjects.Models;
-using Microsoft.EntityFrameworkCore;
-using Repositories.Interface;
-using Services.Interface;
-using Services.Response;
+using SPSS.BusinessObject.Dto.SkinType;
+using SPSS.Service.Interfaces;
+using SPSS.BusinessObject.Models;
+using SPSS.Repository.Repositories.Interfaces;
+using SPSS.Repository.UnitOfWork.Interfaces;
+using SPSS.Shared.Responses;
 
-namespace Services.Implementation;
+namespace SPSS.Service.Implementations;
 
 public class SkinTypeService : ISkinTypeService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
+    private readonly ISkinTypeRepository _skinTypeRepository;
 
-    public SkinTypeService(IUnitOfWork unitOfWork, IMapper mapper)
+	public SkinTypeService(IUnitOfWork unitOfWork, IMapper mapper)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
-    }
+		_skinTypeRepository = _unitOfWork.GetRepository<ISkinTypeRepository>();
+	}
 
     public async Task<SkinTypeWithDetailDto> GetByIdAsync(Guid id)
     {
-        // Truy vấn dữ liệu với Include
-        var skinType = await _unitOfWork.SkinTypes.Entities
-            .Include(s => s.SkinTypeRoutineSteps) // Include các bước chăm sóc
-                .ThenInclude(step => step.Category) // Include Category trong từng bước
-            .Include(s => s.SkinTypeRoutineSteps) // Include thêm Products trong từng bướ
-            .FirstOrDefaultAsync(s => s.Id == id); // Lọc theo ID
+        // Truy vấn dữ liệu
+        var skinType = await _skinTypeRepository.GetByIdAsync(id);
 
         if (skinType == null)
             throw new KeyNotFoundException($"SkinType with ID {id} not found.");
@@ -39,21 +34,7 @@ public class SkinTypeService : ISkinTypeService
         {
             Id = skinType.Id,
             Name = skinType.Name,
-            Description = skinType.Description,
-            SkinTypeRoutineSteps = skinType.SkinTypeRoutineSteps
-                .OrderBy(step => step.Order) // Đảm bảo thứ tự bước
-                .Select(step => new SkinTypeRoutineStepDto
-                {
-                    StepName = step.StepName,
-                    Instruction = step.Instruction,
-                    Order = step.Order,
-                    Category = step.Category == null ? null : new ProductCategoryOverviewDto
-                    {
-                        Id = step.Category.Id,
-                        CategoryName = step.Category.CategoryName
-                    },
-                    Products = []
-                }).ToList()
+            Description = skinType.Description
         };
 
         return dto;
@@ -62,7 +43,7 @@ public class SkinTypeService : ISkinTypeService
     public async Task<PagedResponse<SkinTypeDto>> GetPagedAsync(int pageNumber, int pageSize)
     {
         // Retrieve paged SkinType entities and total count
-        var (skinTypes, totalCount) = await _unitOfWork.SkinTypes.GetPagedAsync(
+        var (skinTypes, totalCount) = await _skinTypeRepository.GetPagedAsync(
             pageNumber, pageSize, null);
 
         // Manual mapping from SkinType to SkinTypeDto
@@ -73,13 +54,7 @@ public class SkinTypeService : ISkinTypeService
         }).ToList();
 
         // Create and return a paged response
-        return new PagedResponse<SkinTypeDto>
-        {
-            Items = skinTypeDtos,
-            TotalCount = totalCount,
-            PageNumber = pageNumber,
-            PageSize = pageSize
-        };
+        return new PagedResponse<SkinTypeDto>(skinTypeDtos, totalCount, pageNumber, pageSize);
     }
 
     public async Task<bool> CreateAsync(SkinTypeForCreationDto? skinTypeForCreationDto, Guid userId)
@@ -95,26 +70,9 @@ public class SkinTypeService : ISkinTypeService
             Description = skinTypeForCreationDto.Description,
         };
 
-        // Handle Routine Steps
-        if (skinTypeForCreationDto.SkinTypeRoutineSteps != null && skinTypeForCreationDto.SkinTypeRoutineSteps.Any())
-        {
-            // Map Routine Steps và gắn vào SkinType
-            var routineSteps = skinTypeForCreationDto.SkinTypeRoutineSteps.Select(step => new SkinTypeRoutineStep
-            {
-                Id = Guid.NewGuid(),
-                SkinTypeId = skinType.Id,
-                StepName = step.StepName,
-                Instruction = step.Instruction,
-                CategoryId = step.CategoryId,
-                Order = step.Order
-            }).ToList();
-
-            skinType.SkinTypeRoutineSteps = routineSteps;
-        }
-
         try
         {
-            _unitOfWork.SkinTypes.Add(skinType);
+            _skinTypeRepository.Add(skinType);
             await _unitOfWork.SaveChangesAsync();
             // Thông báo thành công nếu cần
             Console.WriteLine("SkinType đã được thêm thành công vào database.");
@@ -134,7 +92,7 @@ public class SkinTypeService : ISkinTypeService
         if (skinTypeForUpdateDto is null)
             throw new ArgumentNullException(nameof(skinTypeForUpdateDto), "SkinType data cannot be null.");
 
-        var skinType = await _unitOfWork.SkinTypes.GetByIdAsync(skinTypeId);
+        var skinType = await _skinTypeRepository.GetByIdAsync(skinTypeId);
         if (skinType == null)
             throw new KeyNotFoundException($"SkinType with ID {skinTypeId} not found.");
 
@@ -143,13 +101,12 @@ public class SkinTypeService : ISkinTypeService
         return _mapper.Map<SkinTypeWithDetailDto>(skinType);
     }
 
-    public async Task DeleteAsync(Guid id)
-    {
-        var skinType = await _unitOfWork.SkinTypes.GetByIdAsync(id);
-        if (skinType == null)
-            throw new KeyNotFoundException($"SkinType with ID {id} not found.");
-
-        _unitOfWork.SkinTypes.Update(skinType);
-        await _unitOfWork.SaveChangesAsync();
-    }
+    //public async Task DeleteAsync(Guid id)
+    //{
+    //    var skinType = await _skinTypeRepository.GetByIdAsync(id);
+    //    if (skinType == null)
+    //        throw new KeyNotFoundException($"SkinType with ID {id} not found.");
+    //    _skinTypeRepository.Update(skinType);
+    //    await _unitOfWork.SaveChangesAsync();
+    //}
 }
