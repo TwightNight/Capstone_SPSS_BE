@@ -14,6 +14,9 @@ namespace SPSS.Service.Services.Interfaces
 	public interface IAppointmentService
 	{
 		Task<AppointmentResponseDto?> GetByIdAsync(Guid id);
+		Task<AppointmentResponseDto?> GetByIdIncludeAsync(
+			Guid id,
+			Func<IQueryable<Appointment>, IIncludableQueryable<Appointment, object>>? include = null);
 		Task<IEnumerable<AppointmentResponseDto>> GetAllAsync();
 		Task<IEnumerable<AppointmentResponseDto>> GetAsync(
 			Expression<Func<Appointment, bool>>? filter = null,
