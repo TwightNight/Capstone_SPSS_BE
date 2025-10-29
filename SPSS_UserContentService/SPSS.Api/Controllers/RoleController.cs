@@ -3,12 +3,15 @@ using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.Role;
 using SPSS.Service.Services.Interfaces;
 using SPSS.Shared.Responses;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace SPSS.Api.Controllers;
 
 [ApiController]
 [Route("api/roles")]
-//[Authorize(Roles = "Admin")] // BẮT BUỘC: Chỉ Admin mới được quản lý Role
+//[Authorize(Roles = "Admin")]
 public class RoleController : ControllerBase
 {
     private readonly IRoleService _roleService;
@@ -16,24 +19,16 @@ public class RoleController : ControllerBase
 
     public RoleController(IRoleService roleService, ILogger<RoleController> logger)
     {
-        _roleService = roleService;
-        _logger = logger;
+        _roleService = roleService ?? throw new ArgumentNullException(nameof(roleService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     [HttpGet]
     [ProducesResponseType(typeof(PagedResponse<RoleDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetRolesPaged([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
-        try
-        {
-            var response = await _roleService.GetPagedAsync(pageNumber, pageSize);
-            return Ok(response);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Lỗi khi lấy danh sách Role phân trang.");
-            return StatusCode(500, "Lỗi hệ thống.");
-        }
+        var response = await _roleService.GetPagedAsync(pageNumber, pageSize);
+        return Ok(response);
     }
 
     [HttpGet("{id:guid}")]
@@ -49,11 +44,6 @@ public class RoleController : ControllerBase
         catch (KeyNotFoundException ex)
         {
             return NotFound(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Lỗi khi tìm Role có ID {RoleId}", id);
-            return StatusCode(500, "Lỗi hệ thống.");
         }
     }
 
@@ -71,11 +61,6 @@ public class RoleController : ControllerBase
         {
             return NotFound(new { message = ex.Message });
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Lỗi khi tìm Role có tên {RoleName}", roleName);
-            return StatusCode(500, "Lỗi hệ thống.");
-        }
     }
 
     [HttpPost]
@@ -84,11 +69,6 @@ public class RoleController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CreateRole([FromBody] RoleForCreationDto roleDto)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
         try
         {
             var createdRole = await _roleService.CreateAsync(roleDto);
@@ -98,14 +78,9 @@ public class RoleController : ControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
-        catch (InvalidOperationException ex) // Bắt lỗi trùng tên
+        catch (InvalidOperationException ex)
         {
             return Conflict(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Lỗi khi tạo Role mới {RoleName}", roleDto.RoleName);
-            return StatusCode(500, "Lỗi hệ thống khi tạo Role.");
         }
     }
 
@@ -116,11 +91,6 @@ public class RoleController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateRole(Guid id, [FromBody] RoleForUpdateDto roleDto)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
         try
         {
             var updatedRole = await _roleService.UpdateAsync(id, roleDto);
@@ -134,14 +104,9 @@ public class RoleController : ControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
-        catch (InvalidOperationException ex) // Bắt lỗi trùng tên
+        catch (InvalidOperationException ex)
         {
             return Conflict(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Lỗi khi cập nhật Role {RoleId}", id);
-            return StatusCode(500, "Lỗi hệ thống khi cập nhật Role.");
         }
     }
 
@@ -160,14 +125,9 @@ public class RoleController : ControllerBase
         {
             return NotFound(new { message = ex.Message });
         }
-        catch (InvalidOperationException ex) // Bắt lỗi "Role in use"
+        catch (InvalidOperationException ex)
         {
             return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Lỗi khi xóa Role {RoleId}", id);
-            return StatusCode(500, "Lỗi hệ thống khi xóa Role.");
         }
     }
 }

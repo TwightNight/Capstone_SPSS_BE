@@ -2,13 +2,15 @@
 using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.Authentication;
 using SPSS.Service.Services.Interfaces;
-using System.Security.Claims;
+using System;
 using System.Security;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace SPSS.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/authentication")]
 public class AuthenticationController : ControllerBase
 {
     private readonly IAuthenticationService _authService;
@@ -16,8 +18,8 @@ public class AuthenticationController : ControllerBase
 
     public AuthenticationController(IAuthenticationService authService, ILogger<AuthenticationController> logger)
     {
-        _authService = authService;
-        _logger = logger;
+        _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     [HttpPost("login")]
@@ -35,29 +37,59 @@ public class AuthenticationController : ControllerBase
         {
             return Unauthorized(new { message = ex.Message });
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Lỗi xảy ra khi đăng nhập user {Username}", request.UsernameOrEmail);
-            return StatusCode(500, "Lỗi hệ thống khi đăng nhập.");
-        }
     }
 
     [HttpPost("register")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(string), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
         try
         {
-            var userId = await _authService.RegisterAsync(request);
-            return CreatedAtAction(nameof(Login), new { userId }, new { userId });
+            var user = await _authService.RegisterAsync(request);
+            return StatusCode(StatusCodes.Status201Created, new { user });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+        //catch (ArgumentException ex)
+        //{
+        //    return BadRequest(new { message = ex.Message });
+        //}
+    }
+
+    [HttpPost("register-privileged")]
+    [Authorize(Roles = "Admin,Manager")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> RegisterPrivilegedUser([FromBody] PrivilegedRegisterRequest request)
+    {
+        try
+        {
+            var user = new AuthUserDto();
+            switch (request.RoleName)
+            {
+                case "Manager":
+                    if (!User.IsInRole("Admin"))
+                    {
+                        return Forbid();
+                    }
+                    user = await _authService.RegisterForManagerAsync(request);
+                    break;
+
+                case "Staff":
+                    user = await _authService.RegisterForStaffAsync(request);
+                    break;
+
+                default:
+                    return BadRequest(new { message = "Invalid or unsupported role specified." });
+            }
+            return StatusCode(StatusCodes.Status201Created, new { user });
         }
         catch (InvalidOperationException ex)
         {
@@ -67,82 +99,32 @@ public class AuthenticationController : ControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
-        catch (ApplicationException ex)
-        {
-            _logger.LogError(ex, "Lỗi đăng ký (đã rollback) cho user {Username}", request.UserName);
-            return StatusCode(500, "Không thể hoàn tất đăng ký. Vui lòng thử lại.");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Lỗi hệ thống khi đăng ký user {Username}", request.UserName);
-            return StatusCode(500, "Lỗi hệ thống.");
-        }
-    }
-
-    [HttpPost("register-manager")]
-    [Authorize(Roles = "Admin")]
-    [ProducesResponseType(typeof(string), StatusCodes.Status201Created)]
-    public async Task<IActionResult> RegisterManager([FromBody] RegisterRequest request)
-    {
-        try
-        {
-            var userId = await _authService.RegisterForManagerAsync(request);
-            return CreatedAtAction(nameof(Login), new { userId }, new { userId });
-        }
-        catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
-        catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
-        catch (ApplicationException ex)
-        {
-            _logger.LogError(ex, "Lỗi đăng ký Manager (đã rollback) cho user {Username}", request.UserName);
-            return StatusCode(500, "Không thể hoàn tất đăng ký.");
-        }
-    }
-
-    [HttpPost("register-staff")]
-    [Authorize(Roles = "Admin,Manager")]
-    [ProducesResponseType(typeof(string), StatusCodes.Status201Created)]
-    public async Task<IActionResult> RegisterStaff([FromBody] RegisterRequest request)
-    {
-        try
-        {
-            var userId = await _authService.RegisterForStaffAsync(request);
-            return CreatedAtAction(nameof(Login), new { userId }, new { userId });
-        }
-        catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
-        catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
-        catch (ApplicationException ex)
-        {
-            _logger.LogError(ex, "Lỗi đăng ký Staff (đã rollback) cho user {Username}", request.UserName);
-            return StatusCode(500, "Không thể hoàn tất đăng ký.");
-        }
     }
 
     [HttpPost("change-password")]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
         try
         {
             var userId = GetUserIdFromClaims();
             await _authService.ChangePasswordAsync(userId, request.CurrentPassword, request.NewPassword);
             return NoContent();
         }
-        catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
-        catch (UnauthorizedAccessException ex) { return BadRequest(new { message = ex.Message }); }
-        catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
-        catch (Exception ex)
+        catch (KeyNotFoundException ex)
         {
-            _logger.LogError(ex, "Lỗi đổi mật khẩu cho user {UserId}", GetUserIdFromClaims());
-            return StatusCode(500, "Lỗi hệ thống.");
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
     }
 
@@ -155,18 +137,12 @@ public class AuthenticationController : ControllerBase
         try
         {
             var expiredAccessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-            if (string.IsNullOrEmpty(expiredAccessToken))
-            {
-                return Unauthorized(new { message = "Không tìm thấy Access Token." });
-            }
             var response = await _authService.RefreshTokenAsync(expiredAccessToken, request.RefreshToken);
             return Ok(response);
         }
-        catch (SecurityException ex) { return Unauthorized(new { message = ex.Message }); }
-        catch (Exception ex)
+        catch (SecurityException ex)
         {
-            _logger.LogError(ex, "Lỗi khi làm mới token.");
-            return StatusCode(500, "Lỗi hệ thống.");
+            return Unauthorized(new { message = ex.Message });
         }
     }
 
@@ -175,16 +151,8 @@ public class AuthenticationController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
     {
-        try
-        {
-            await _authService.LogoutAsync(request.RefreshToken);
-            return NoContent();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Lỗi khi đăng xuất.");
-            return NoContent();
-        }
+        await _authService.LogoutAsync(request.RefreshToken);
+        return NoContent();
     }
 
     [HttpPost("assign-role")]
@@ -192,7 +160,7 @@ public class AuthenticationController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> AssignRole([FromBody] AssignRoleRequest request)
+    public async Task<IActionResult> AssignRole([FromBody] AssignRoleRequest  request)
     {
         try
         {
@@ -203,23 +171,15 @@ public class AuthenticationController : ControllerBase
         {
             return NotFound(new { message = ex.Message });
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Lỗi khi gán vai trò {RoleName} cho user {UserId}", request.RoleName, request.UserId);
-            return StatusCode(500, "Lỗi hệ thống.");
-        }
     }
 
     private Guid GetUserIdFromClaims()
     {
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+        if (string.IsNullOrWhiteSpace(userIdString) || !Guid.TryParse(userIdString, out var userId))
         {
-            _logger.LogWarning("Không thể tìm thấy hoặc phân tích UserId từ claims.");
-            throw new SecurityException("Thông tin người dùng không hợp lệ.");
+            throw new SecurityException("User identifier is missing or invalid in the security token.");
         }
-
         return userId;
     }
 }

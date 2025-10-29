@@ -1,5 +1,4 @@
-﻿// Trong dự án SPSS.Api
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -14,7 +13,7 @@ using SPSS.Service.Services.Implementations;
 using SPSS.Service.Services.Interfaces;
 using SPSS.Shared.Base.Implementations;
 using SPSS.Shared.Base.Interfaces;
-using System.Reflection;
+using SPSS.Shared.Helpers;
 using System.Text;
 
 namespace SPSS.Api;
@@ -23,28 +22,20 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddPresentationServices(this IServiceCollection services, IConfiguration configuration)
     {
-        // 1. Đăng ký Controllers
         services.AddControllers();
-
-        // 2. Đăng ký HttpContextAccessor (rất phổ biến)
-        // Giúp bạn có thể inject IHttpContextAccessor vào các Service
         services.AddHttpContextAccessor();
 
-        // 3. Cấu hình CORS (Chính sách Cross-Origin)
         services.AddCors(options =>
         {
             options.AddPolicy("AllowAll",
                 builder => builder.AllowAnyOrigin()
                                   .AllowAnyMethod()
                                   .AllowAnyHeader());
-            // Hoặc một chính sách chặt chẽ hơn cho production
         });
 
-        // 4. Cấu hình Swagger/OpenAPI (để test API)
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(options =>
         {
-            // Đây là ví dụ cấu hình Swagger để hỗ trợ JWT
             options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
                 Name = "Authorization",
@@ -70,8 +61,12 @@ public static class DependencyInjection
             });
         });
 
-        // 5. Cấu hình Authentication (JWT)
-        // Đọc cấu hình JWT từ appsettings.json
+        var jwtKey = configuration["JwtSettings:Key"];
+        if (string.IsNullOrEmpty(jwtKey))
+        {
+            throw new InvalidOperationException("JWT Key is not configured in appsettings.json under JwtSettings:Key");
+        }
+
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
@@ -83,24 +78,21 @@ public static class DependencyInjection
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = configuration["JwtSettings:Issuer"],
                     ValidAudience = configuration["JwtSettings:Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JwtSettings:Key"]))
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+                    ClockSkew = TimeSpan.Zero
                 };
             });
 
-        //// 6. Cấu hình Authorization (Policies)
-        //services.AddAuthorization(options =>
-        //{
-        //    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
-        //    // ... Thêm các policy khác
-        //});
+        services.AddAuthorization();
 
         return services;
     }
+
     public static IServiceCollection AddPersistenceServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDbContext<UserDBContext>(options =>
             options.UseSqlServer(
-                configuration.GetConnectionString("DefaultConnectionString")));
+                configuration.GetConnectionString("DefaultConnection")));
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
@@ -110,20 +102,20 @@ public static class DependencyInjection
         services.AddScoped<IBlogRepository, BlogRepository>();
         services.AddScoped<IBlogSectionRepository, BlogSectionRepository>();
         services.AddScoped<ICountryRepository, CountryRepository>();
-        services.AddScoped<IAddressRepository, AddressRepository>();
         services.AddScoped<IChatHistoryRepository, ChatHistoryRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<ITransactionRepository, TransactionRepository>();
-        services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<ISkinConditionRepository, SkinConditionRepository>();
         services.AddScoped<ISkinTypeRepository, SkinTypeRepository>();
 
         return services;
     }
+
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
-        services.AddAutoMapper(Assembly.GetExecutingAssembly());
+        //services.AddAutoMapper(typeof(UserService).Assembly);
+        services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IAddressService, AddressService>();
@@ -135,11 +127,8 @@ public static class DependencyInjection
         services.AddScoped<ISkinConditionService, SkinConditionService>();
         services.AddScoped<ISkinTypeService, SkinTypeService>();
         services.AddScoped<ITransactionService, TransactionService>();
-        services.AddScoped<IUserService, UserService>();
-        services.AddScoped<IUserService, UserService>();
-        services.AddScoped<IUserService, UserService>();
-        services.AddScoped<IUserService, UserService>();
-
+        services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 
         return services;
     }

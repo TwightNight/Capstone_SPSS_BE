@@ -7,9 +7,9 @@ public interface IAuthenticationService
     Task<AuthenticationResponse> LoginAsync(LoginRequest loginRequest);
     Task<AuthenticationResponse> RefreshTokenAsync(string accessToken, string refreshToken);
     Task LogoutAsync(string refreshToken);
-    Task<string> RegisterAsync(RegisterRequest registerRequest);
-    Task<string> RegisterForManagerAsync(RegisterRequest registerRequest);
-    Task<string> RegisterForStaffAsync(RegisterRequest registerRequest);
+    Task<AuthUserDto> RegisterAsync(RegisterRequest registerRequest);
+    Task<AuthUserDto> RegisterForManagerAsync(RegisterRequest registerRequest);
+    Task<AuthUserDto> RegisterForStaffAsync(RegisterRequest registerRequest);
     Task ChangePasswordAsync(Guid userId, string currentPassword, string newPassword);
     Task AssignRoleToUser(string userId, string roleName);
 }
