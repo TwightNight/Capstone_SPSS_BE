@@ -19,7 +19,7 @@ using System.Text;
 
 namespace SPSS.Api;
 
-public static class PresentationServiceRegistration
+public static class DependencyInjection
 {
     public static IServiceCollection AddPresentationServices(this IServiceCollection services, IConfiguration configuration)
     {
@@ -87,12 +87,12 @@ public static class PresentationServiceRegistration
                 };
             });
 
-        // 6. Cấu hình Authorization (Policies)
-        services.AddAuthorization(options =>
-        {
-            options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
-            // ... Thêm các policy khác
-        });
+        //// 6. Cấu hình Authorization (Policies)
+        //services.AddAuthorization(options =>
+        //{
+        //    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+        //    // ... Thêm các policy khác
+        //});
 
         return services;
     }
