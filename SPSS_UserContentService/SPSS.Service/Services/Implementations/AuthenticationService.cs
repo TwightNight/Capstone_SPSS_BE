@@ -6,7 +6,6 @@ using SPSS.BusinessObject.Dto.User;
 using SPSS.BusinessObject.Models;
 using SPSS.Repository.Repositories.Interfaces;
 using SPSS.Repository.UnitOfWork.Interfaces;
-using SPSS.Service.Services.Interface;
 using SPSS.Service.Services.Interfaces;
 using SPSS.Shared.Helpers;
 using SPSS.Shared.Constants;
@@ -152,20 +151,36 @@ public class AuthenticationService : IAuthenticationService
 
 		UserDto? createdUser = null;
 
-		try
-		{
-			createdUser = await _userService.CreateAsync(userForCreationDto);
-			await AssignRoleToUser(createdUser.UserId.ToString(), roleName);
-			return createdUser.UserId.ToString();
-		}
-		catch (Exception ex)
-		{
-			if (createdUser != null)
-				await _userService.DeleteAsync(createdUser.UserId);
+        await _unitOfWork.BeginTransactionAsync(); // Bắt đầu Transaction
+        try
+        {
+            // 1. Tạo user
+            createdUser = await _userService.CreateAsync(userForCreationDto);
+            if (createdUser == null)
+            {
+                // Nếu service CreateAsync trả về null (có thể do lỗi), rollback ngay
+                throw new ApplicationException(ExceptionMessageConstants.Authentication.RegistrationFailed);
+            }
 
-			throw new ApplicationException(string.Format(ExceptionMessageConstants.Authentication.RegistrationFailed, ex.Message), ex);
-		}
-	}
+            // 2. Gán vai trò (Role)
+            await AssignRoleToUser(createdUser.UserId.ToString(), roleName);
+
+            // 3. Commit
+            await _unitOfWork.CommitTransactionAsync(); // Cả 2 thành công
+
+            return createdUser.UserId.ToString();
+        }
+        catch (Exception ex)
+        {
+            await _unitOfWork.RollbackTransactionAsync(); // Bất kỳ lỗi nào xảy ra, hủy bỏ tất cả
+
+            // Log lỗi
+            // _logger.LogError(ex, "Đăng ký thất bại cho user {UserName}", registerRequest.UserName);
+
+            // Ném lỗi ra ngoài để controller bắt
+            throw new ApplicationException(string.Format(ExceptionMessageConstants.Authentication.RegistrationFailed, ex.Message), ex);
+        }
+    }
 
 	public async Task AssignRoleToUser(string userId, string roleName)
 	{

@@ -13,8 +13,14 @@ namespace SPSS.Service.Mappings
 	{
 		public SkinConditionMappingProfile() 
 		{
-			CreateMap<SkinCondition, SkinConditionDto>().ReverseMap();
-			CreateMap<SkinConditionForCreationDto, SkinCondition>();
-		}
-	}
+            // 1. Map MỘT CHIỀU từ Model sang DTO (cho các hàm Get)
+            CreateMap<SkinCondition, SkinConditionDto>();
+
+            // 2. Map MỘT CHIỀU từ CreationDto sang Model (cho hàm Create)
+            CreateMap<SkinConditionForCreationDto, SkinCondition>();
+
+            // 3. THÊM MAP NÀY: Map MỘT CHIỀU từ UpdateDto sang Model (cho hàm Update)
+            CreateMap<SkinConditionForUpdateDto, SkinCondition>();
+        }
+    }
 }

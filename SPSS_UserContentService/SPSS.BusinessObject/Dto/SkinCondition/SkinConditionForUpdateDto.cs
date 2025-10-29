@@ -9,8 +9,6 @@ namespace SPSS.BusinessObject.Dto.SkinCondition
 {
 	public class SkinConditionForUpdateDto
 	{
-		[Required]
-		public Guid Id { get; set; }
 
 		public string? Name { get; set; }
 

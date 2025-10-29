@@ -88,8 +88,11 @@
 			// Not found
 			public const string NotFound = "Blog with ID {0} not found.";
 
-			// Operation failures
-			public const string FailedToCreate = "Failed to create blog: {0}";
+            // Business rules (Security)
+            public const string NotOwner = "You are not the owner of this blog.";
+
+            // Operation failures
+            public const string FailedToCreate = "Failed to create blog: {0}";
 			public const string FailedToUpdate = "Failed to update blog: {0}";
 			public const string FailedToDelete = "Failed to delete blog: {0}";
 		}
@@ -127,7 +130,9 @@
 			public const string RoleDataNull = "Role data cannot be null.";
 			public const string NotFound = "Role with ID {0} not found.";
 			public const string NotFoundByName = "Role '{0}' does not exist.";
-		}
+            public const string RoleNameAlreadyExists = "Role name '{0}' already exists.";
+            public const string InUseByUsers = "Cannot delete role. It is currently in use by one or more users.";
+        }
 
 		public static class SkinCondition
 		{
@@ -135,7 +140,9 @@
 			public const string NotFound = "Skin condition with ID {0} not found.";
 			public const string FailedToSave = "Failed to save skin condition: {0}";
 			public const string FailedToDelete = "Failed to delete skin condition: {0}";
-		}
+			public const string NameAlreadyExists = "Skin condition name '{0}' already exists.";
+            public const string InUseByUser = "Cannot delete skin condition. It is currently in use.";
+        }
 
 		public static class SkinType
 		{
@@ -143,7 +150,10 @@
 			public const string NotFound = "SkinType with ID {0} not found.";
 			public const string FailedToCreate = "Failed to create skin type: {0}";
 			public const string FailedToUpdate = "Failed to update skin type: {0}";
-		}
+            public const string FailedToDelete = "Failed to delete skin type: {0}";
+            public const string NameAlreadyExists = "Skin type name '{0}' already exists.";
+            public const string InUseByProduct = "Cannot delete skin type. It is currently in use by one or more products.";
+        }
 
 		public static class General
 		{

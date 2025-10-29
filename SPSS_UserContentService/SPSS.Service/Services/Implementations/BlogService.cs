@@ -8,6 +8,7 @@ using SPSS.Repository.UnitOfWork.Interfaces;
 using SPSS.Service.Services.Interfaces;
 using SPSS.Shared.Constants;
 using SPSS.Shared.Responses;
+using System.Security;
 
 namespace SPSS.Service.Services.Implementations;
 
@@ -118,9 +119,13 @@ public class BlogService : IBlogService
 
 			if (blog == null)
 				throw new KeyNotFoundException(string.Format(ExceptionMessageConstants.Blog.NotFound, blogId));
-
-			// Map các thuộc tính của Blog (BlogSections được ignore)
-			_mapper.Map(blogDto, blog);
+            if (blog.UserId != userId /* && !isAdmin */)
+			{
+                // Ném lỗi 403 Forbidden (Cấm)
+                throw new SecurityException(ExceptionMessageConstants.Blog.NotOwner);
+            }
+            // Map các thuộc tính của Blog (BlogSections được ignore)
+            _mapper.Map(blogDto, blog);
 			blog.LastUpdatedTime = DateTimeOffset.UtcNow;
 			blog.LastUpdatedBy = userId.ToString();
 
@@ -144,8 +149,12 @@ public class BlogService : IBlogService
 
 		if (blog == null || blog.IsDeleted)
 			throw new KeyNotFoundException(string.Format(ExceptionMessageConstants.Blog.NotFound, id));
-
-		blog.IsDeleted = true;
+        if (blog.UserId != userId /* && !isAdmin */)
+        {
+            // Ném lỗi 403 Forbidden (Cấm)
+            throw new SecurityException(ExceptionMessageConstants.Blog.NotOwner);
+        }
+        blog.IsDeleted = true;
 		blog.DeletedTime = DateTimeOffset.UtcNow;
 		blog.DeletedBy = userId.ToString();
 
