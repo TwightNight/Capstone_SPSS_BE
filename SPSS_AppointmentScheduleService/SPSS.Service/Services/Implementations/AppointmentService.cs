@@ -40,6 +40,21 @@ namespace SPSS.Service.Services.Implementations
 			return _mapper.Map<AppointmentResponseDto>(appointment);
 		}
 
+		public async Task<AppointmentResponseDto?> GetByIdIncludeAsync(
+			Guid id,
+			Func<IQueryable<Appointment>, IIncludableQueryable<Appointment, object>>? include = null)
+		{
+			var appointment = await _appointmentRepository.GetFirstOrDefaultAsync(
+				predicate: a => a.Id == id && !a.IsDeleted,
+				include: include
+			);
+
+			if (appointment == null)
+				return null;
+
+			return _mapper.Map<AppointmentResponseDto>(appointment);
+		}
+
 		public async Task<IEnumerable<AppointmentResponseDto>> GetAllAsync()
 		{
 			var appointments = await _appointmentRepository.GetAsync(
