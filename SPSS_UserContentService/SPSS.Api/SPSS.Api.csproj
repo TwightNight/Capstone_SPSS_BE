@@ -20,6 +20,7 @@
     <ProjectReference Include="..\SPSS.Service\SPSS.Service.csproj">
       <Private>True</Private>
     </ProjectReference>
+    <ProjectReference Include="..\SPSS.Shared\SPSS.Shared.csproj" />
   </ItemGroup>
 
 </Project>

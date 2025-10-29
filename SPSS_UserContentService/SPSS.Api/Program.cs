@@ -1,5 +1,6 @@
 ﻿using Serilog; // Thêm Serilog
 using SPSS.Api;
+using SPSS.Api.Middlewares;
 using System;
 
 // --- CẤU HÌNH SERILOG (BẮT ĐẦU) ---
@@ -42,7 +43,9 @@ try
     }
 
     app.UseHttpsRedirection();
-    app.UseCors("AllowAll"); // Đảm bảo "AllowAll" đã được định nghĩa trong AddPresentationServices
+	app.UseMiddleware<ExceptionMiddleware>();
+    app.UseMiddleware<AuthMiddleware>();
+	app.UseCors("AllowAll"); // Đảm bảo "AllowAll" đã được định nghĩa trong AddPresentationServices
     app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();
