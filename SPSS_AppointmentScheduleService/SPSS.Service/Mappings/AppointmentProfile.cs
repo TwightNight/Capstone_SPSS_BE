@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using SPSS.BusinessObject.DTOs;
+using SPSS.BusinessObject.DTOs.Appointment;
 using SPSS.BusinessObject.Models;
 using System;
 using System.Collections.Generic;

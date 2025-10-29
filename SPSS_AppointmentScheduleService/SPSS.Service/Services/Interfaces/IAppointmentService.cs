@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore.Query;
-using SPSS.BusinessObject.DTOs;
+using SPSS.BusinessObject.DTOs.Appointment;
 using SPSS.BusinessObject.Models;
 using SPSS.Shared.Responses;
 using System;
