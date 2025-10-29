@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using SPSS.Service.Implementations;
+using SPSS.Service.Interfaces;
 using SPSS.Service.Services.Implementations;
 using SPSS.Service.Services.Interfaces;
 using System;
@@ -16,6 +18,19 @@ public static class ApplicationServiceRegistration
     {
         services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
+        services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IAddressService, AddressService>();
+        services.AddScoped<IAuthenticationService, AuthenticationService>();
+        services.AddScoped<IBlogService, BlogService>();
+        services.AddScoped<ICountryService, CountryService>();
+        services.AddScoped<IChatHistoryService, ChatHistoryService>();
+        services.AddScoped<IRoleService, RoleService>();
+        services.AddScoped<ISkinConditionService, SkinConditionService>();
+        services.AddScoped<ISkinTypeService, SkinTypeService>();
+        services.AddScoped<ITransactionService, TransactionService>();
+        services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IUserService, UserService>();
         services.AddScoped<IUserService, UserService>();
 
 

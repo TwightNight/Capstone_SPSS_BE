@@ -25,7 +25,8 @@
 		<PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
 	</ItemGroup>
 	<ItemGroup>
-	  <ProjectReference Include="..\SPSS.BusinessObject\SPSS.BusinessObject.csproj" />
-	  <ProjectReference Include="..\SPSS.Repository\SPSS.Repository.csproj" />
+	  <ProjectReference Include="..\SPSS.Repository\SPSS.Repository.csproj">
+	    <Private>True</Private>
+	  </ProjectReference>
 	</ItemGroup>
 </Project>

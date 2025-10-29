@@ -8,7 +8,7 @@ using SPSS.Shared.Base.Interfaces;
 using SPSS.Repository.Repositories.Interfaces;
 using SPSS.Repository.Repositories.Implementations;
 
-namespace SPSS.Repository.UnitOfWork;
+namespace SPSS.Repository;
 
 public static class PersistenceServiceRegistration
 {
@@ -18,7 +18,7 @@ public static class PersistenceServiceRegistration
             options.UseSqlServer(
                 configuration.GetConnectionString("DefaultConnectionString")));
 
-        services.AddScoped<IUnitOfWork, Implementations.UnitOfWork>();
+        services.AddScoped<IUnitOfWork, UnitOfWork.Implementations.UnitOfWork>();
      
         services.AddScoped(typeof(IRepositoryBase<,>), typeof(RepositoryBase<,>)); 
         services.AddScoped<IUserRepository, UserRepository>();

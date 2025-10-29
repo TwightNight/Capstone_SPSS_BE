@@ -1,6 +1,6 @@
 ﻿using SPSS.BusinessObject.Dto.Authentication;
 
-namespace SPSS.Service.Services.Interface;
+namespace SPSS.Service.Services.Interfaces;
 
 public interface IAuthenticationService
 {
@@ -11,4 +11,5 @@ public interface IAuthenticationService
     Task<string> RegisterForManagerAsync(RegisterRequest registerRequest);
     Task<string> RegisterForStaffAsync(RegisterRequest registerRequest);
     Task ChangePasswordAsync(Guid userId, string currentPassword, string newPassword);
+    Task AssignRoleToUser(string userId, string roleName);
 }

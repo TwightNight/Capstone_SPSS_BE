@@ -12,10 +12,12 @@ namespace SPSS.Service.Mappings
 	public class SkinTypeMappingProfile : Profile
 	{
 		public SkinTypeMappingProfile()
-		{
-			CreateMap<SkinType, SkinTypeWithDetailDto>();
-			CreateMap<SkinTypeForCreationDto, SkinTypeWithDetailDto>();
-			CreateMap<SkinTypeForUpdateDto, SkinTypeWithDetailDto>();
-		}
-	}
+        {
+            CreateMap<SkinType, SkinTypeWithDetailDto>();
+            CreateMap<SkinType, SkinTypeDto>(); 
+
+            CreateMap<SkinTypeForCreationDto, SkinType>();
+            CreateMap<SkinTypeForUpdateDto, SkinType>();
+        }
+    }
 }
