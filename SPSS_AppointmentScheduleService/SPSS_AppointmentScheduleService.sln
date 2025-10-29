@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SPSS.Shared", "SPSS.Shared\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SPSS.Repository", "SPSS.Repository\SPSS.Repository.csproj", "{5AF9EB78-82AB-4AD6-8680-B10890B5C04B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SPSS.Service", "SPSS.Service\SPSS.Service.csproj", "{137370C8-9768-48D6-AC36-FDCC2ACB4452}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{5AF9EB78-82AB-4AD6-8680-B10890B5C04B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5AF9EB78-82AB-4AD6-8680-B10890B5C04B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5AF9EB78-82AB-4AD6-8680-B10890B5C04B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{137370C8-9768-48D6-AC36-FDCC2ACB4452}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{137370C8-9768-48D6-AC36-FDCC2ACB4452}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{137370C8-9768-48D6-AC36-FDCC2ACB4452}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{137370C8-9768-48D6-AC36-FDCC2ACB4452}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
