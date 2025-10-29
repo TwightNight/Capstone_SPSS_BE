@@ -2,14 +2,18 @@
 using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.SkinCondition;
 using SPSS.Service.Services.Interfaces;
-using SPSS.Shared.Responses; // Cần cho PagedResponse
-using System.Security.Claims;
+using SPSS.Shared.Responses;
+using System;
+using System.Collections.Generic;
 using System.Security;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace SPSS.Api.Controllers;
 
 [ApiController]
 [Route("api/skin-conditions")]
+[Authorize(Roles = "Admin")]
 public class SkinConditionController : ControllerBase
 {
     private readonly ISkinConditionService _skinConditionService;
@@ -17,8 +21,8 @@ public class SkinConditionController : ControllerBase
 
     public SkinConditionController(ISkinConditionService skinConditionService, ILogger<SkinConditionController> logger)
     {
-        _skinConditionService = skinConditionService;
-        _logger = logger;
+        _skinConditionService = skinConditionService ?? throw new ArgumentNullException(nameof(skinConditionService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     [HttpGet]
@@ -26,16 +30,8 @@ public class SkinConditionController : ControllerBase
     [ProducesResponseType(typeof(PagedResponse<SkinConditionDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPaged([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
-        try
-        {
-            var response = await _skinConditionService.GetPagedAsync(pageNumber, pageSize);
-            return Ok(response);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Lỗi khi lấy danh sách SkinCondition phân trang.");
-            return StatusCode(500, "Lỗi hệ thống.");
-        }
+        var response = await _skinConditionService.GetPagedAsync(pageNumber, pageSize);
+        return Ok(response);
     }
 
     [HttpGet("{id:guid}")]
@@ -53,25 +49,14 @@ public class SkinConditionController : ControllerBase
         {
             return NotFound(new { message = ex.Message });
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Lỗi khi tìm SkinCondition có ID {Id}", id);
-            return StatusCode(500, "Lỗi hệ thống.");
-        }
     }
 
     [HttpPost]
-    //[Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(SkinConditionDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Create([FromBody] SkinConditionForCreationDto dto)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
         try
         {
             var userId = GetUserIdFromClaims();
@@ -82,30 +67,19 @@ public class SkinConditionController : ControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
-        catch (InvalidOperationException ex) // Bắt lỗi NameAlreadyExists
+        catch (InvalidOperationException ex)
         {
             return Conflict(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Lỗi khi tạo SkinCondition mới {Name}", dto.Name);
-            return StatusCode(500, "Lỗi hệ thống.");
         }
     }
 
     [HttpPut("{id:guid}")]
-    //[Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(SkinConditionDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Update(Guid id, [FromBody] SkinConditionForUpdateDto dto)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
         try
         {
             var userId = GetUserIdFromClaims();
@@ -120,19 +94,13 @@ public class SkinConditionController : ControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
-        catch (InvalidOperationException ex) // Bắt lỗi NameAlreadyExists
+        catch (InvalidOperationException ex)
         {
             return Conflict(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Lỗi khi cập nhật SkinCondition {Id}", id);
-            return StatusCode(500, "Lỗi hệ thống.");
         }
     }
 
     [HttpDelete("{id:guid}")]
-    //[Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -148,27 +116,19 @@ public class SkinConditionController : ControllerBase
         {
             return NotFound(new { message = ex.Message });
         }
-        catch (InvalidOperationException ex) // Bắt lỗi "InUseByUser"
+        catch (InvalidOperationException ex)
         {
             return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Lỗi khi xóa SkinCondition {Id}", id);
-            return StatusCode(500, "Lỗi hệ thống.");
         }
     }
 
     private Guid GetUserIdFromClaims()
     {
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+        if (string.IsNullOrWhiteSpace(userIdString) || !Guid.TryParse(userIdString, out var userId))
         {
-            _logger.LogWarning("Không thể tìm thấy hoặc phân tích UserId từ claims.");
-            throw new SecurityException("Thông tin người dùng không hợp lệ.");
+            throw new SecurityException("User identifier is missing or invalid in the security token.");
         }
-
         return userId;
     }
 }

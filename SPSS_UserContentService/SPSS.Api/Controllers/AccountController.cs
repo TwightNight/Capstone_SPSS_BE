@@ -2,15 +2,16 @@
 using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.Account;
 using SPSS.Service.Services.Interfaces;
-using System.ComponentModel.DataAnnotations;
+using System;
 using System.Security;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace SPSS.Api.Controllers;
 
 [ApiController]
 [Route("api/account")]
-//[Authorize] // BẮT BUỘC: Người dùng phải đăng nhập
+[Authorize]
 public class AccountController : ControllerBase
 {
     private readonly IUserService _userService;
@@ -18,14 +19,14 @@ public class AccountController : ControllerBase
 
     public AccountController(IUserService userService, ILogger<AccountController> logger)
     {
-        _userService = userService;
-        _logger = logger;
+        _userService = userService ?? throw new ArgumentNullException(nameof(userService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    [HttpGet("me")]
+    [HttpGet]
     [ProducesResponseType(typeof(AccountDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetMyAccountInfo()
+    public async Task<IActionResult> GetMyAccount()
     {
         try
         {
@@ -35,26 +36,18 @@ public class AccountController : ControllerBase
         }
         catch (KeyNotFoundException ex)
         {
+            _logger.LogWarning(ex, "Account info not found for the current user.");
             return NotFound(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Lỗi khi lấy thông tin account cho user {UserId}", GetUserIdFromClaims());
-            return StatusCode(500, "Lỗi hệ thống.");
         }
     }
 
-    [HttpPut("me")]
+    [HttpPut]
     [ProducesResponseType(typeof(AccountDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> UpdateMyAccountInfo([FromBody] AccountForUpdateDto dto)
+    public async Task<IActionResult> UpdateMyAccount([FromBody] AccountForUpdateDto dto)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
         try
         {
             var userId = GetUserIdFromClaims();
@@ -65,27 +58,23 @@ public class AccountController : ControllerBase
         {
             return NotFound(new { message = ex.Message });
         }
-        catch (InvalidOperationException ex) // Bắt lỗi Trùng lặp
+        catch (InvalidOperationException ex)
         {
             return Conflict(new { message = ex.Message });
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Lỗi khi cập nhật account cho user {UserId}", GetUserIdFromClaims());
-            return StatusCode(500, "Lỗi hệ thống.");
-        }
     }
 
-    [HttpPatch("avatar")] // Dùng PATCH vì chỉ cập nhật 1 phần nhỏ (avatar)
-    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    [HttpPatch("avatar")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateMyAvatar([FromBody] UpdateAvatarRequest request)
     {
-        if (string.IsNullOrEmpty(request.AvatarUrl))
+        if (string.IsNullOrWhiteSpace(request?.AvatarUrl))
         {
-            return BadRequest(new { message = "Avatar URL là bắt buộc." });
+            return BadRequest(new { message = "The AvatarUrl field is required." });
         }
+
         try
         {
             var userId = GetUserIdFromClaims();
@@ -100,20 +89,14 @@ public class AccountController : ControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Lỗi khi cập nhật avatar cho user {UserId}", GetUserIdFromClaims());
-            return StatusCode(500, "Lỗi hệ thống.");
-        }
     }
 
     private Guid GetUserIdFromClaims()
     {
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+        if (string.IsNullOrWhiteSpace(userIdString) || !Guid.TryParse(userIdString, out var userId))
         {
-            _logger.LogWarning("Không thể tìm thấy hoặc phân tích UserId từ claims.");
-            throw new SecurityException("Thông tin người dùng không hợp lệ.");
+            throw new SecurityException("User identifier is missing or invalid in the security token.");
         }
         return userId;
     }

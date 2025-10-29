@@ -25,5 +25,6 @@ public class AuthenticationMappingProfile : Profile
 
         CreateMap<UserForCreationDto, User>();
         CreateMap<User, UserDto>();
+        CreateMap<UserDto, AuthUserDto>();
     }
 }

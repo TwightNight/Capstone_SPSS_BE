@@ -3,8 +3,11 @@ using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.Blog;
 using SPSS.Service.Services.Interfaces;
 using SPSS.Shared.Responses;
+using System;
+using System.Collections.Generic;
 using System.Security;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace SPSS.Api.Controllers;
 
@@ -17,8 +20,8 @@ public class BlogController : ControllerBase
 
     public BlogController(IBlogService blogService, ILogger<BlogController> logger)
     {
-        _blogService = blogService;
-        _logger = logger;
+        _blogService = blogService ?? throw new ArgumentNullException(nameof(blogService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     [HttpGet]
@@ -26,16 +29,8 @@ public class BlogController : ControllerBase
     [ProducesResponseType(typeof(PagedResponse<BlogDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetBlogs([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
-        try
-        {
-            var response = await _blogService.GetPagedAsync(pageNumber, pageSize);
-            return Ok(response);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Lỗi khi lấy danh sách blog phân trang.");
-            return StatusCode(500, "Lỗi hệ thống.");
-        }
+        var response = await _blogService.GetPagedAsync(pageNumber, pageSize);
+        return Ok(response);
     }
 
     [HttpGet("{id:guid}")]
@@ -53,24 +48,14 @@ public class BlogController : ControllerBase
         {
             return NotFound(new { message = ex.Message });
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Lỗi khi lấy chi tiết blog {BlogId}", id);
-            return StatusCode(500, "Lỗi hệ thống.");
-        }
     }
 
     [HttpPost]
-    [Authorize] // Yêu cầu đăng nhập
+    [Authorize]
     [ProducesResponseType(typeof(BlogDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateBlog([FromBody] BlogForCreationDto blogDto)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
         try
         {
             var userId = GetUserIdFromClaims();
@@ -81,26 +66,16 @@ public class BlogController : ControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Lỗi khi tạo blog mới.");
-            return StatusCode(500, "Lỗi hệ thống khi tạo blog.");
-        }
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize] // Yêu cầu đăng nhập
+    [Authorize]
     [ProducesResponseType(typeof(BlogDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateBlog(Guid id, [FromBody] BlogForUpdateDto blogDto)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
         try
         {
             var userId = GetUserIdFromClaims();
@@ -111,23 +86,18 @@ public class BlogController : ControllerBase
         {
             return NotFound(new { message = ex.Message });
         }
-        catch (SecurityException ex) // Bắt lỗi 403 từ Service
+        catch (SecurityException)
         {
-            return Forbid(ex.Message);
+            return Forbid();
         }
         catch (ArgumentException ex)
         {
             return BadRequest(new { message = ex.Message });
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Lỗi khi cập nhật blog {BlogId}", id);
-            return StatusCode(500, "Lỗi hệ thống khi cập nhật blog.");
-        }
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize] // Yêu cầu đăng nhập
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -143,27 +113,19 @@ public class BlogController : ControllerBase
         {
             return NotFound(new { message = ex.Message });
         }
-        catch (SecurityException ex) // Bắt lỗi 403 từ Service
+        catch (SecurityException)
         {
-            return Forbid(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Lỗi khi xóa blog {BlogId}", id);
-            return StatusCode(500, "Lỗi hệ thống khi xóa blog.");
+            return Forbid();
         }
     }
 
     private Guid GetUserIdFromClaims()
     {
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+        if (string.IsNullOrWhiteSpace(userIdString) || !Guid.TryParse(userIdString, out var userId))
         {
-            _logger.LogWarning("Không thể tìm thấy hoặc phân tích UserId từ claims.");
-            throw new SecurityException("Thông tin người dùng không hợp lệ.");
+            throw new SecurityException("User identifier is missing or invalid in the security token.");
         }
-
         return userId;
     }
 }

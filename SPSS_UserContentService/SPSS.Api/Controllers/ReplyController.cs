@@ -1,15 +1,18 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.Reply;
-using SPSS.Service.Interfaces; // Đổi thành SPSS.Service.Services.Interfaces
-using System.Security.Claims;
+using SPSS.Service.Interfaces;
+using SPSS.Service.Services.Interfaces; // Đã sửa namespace
+using System;
 using System.Security;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace SPSS.Api.Controllers;
 
 [ApiController]
 [Route("api/replies")]
-//[Authorize] // BẮT BUỘC: Mọi hành động reply đều cần đăng nhập
+[Authorize]
 public class ReplyController : ControllerBase
 {
     private readonly IReplyService _replyService;
@@ -17,8 +20,8 @@ public class ReplyController : ControllerBase
 
     public ReplyController(IReplyService replyService, ILogger<ReplyController> logger)
     {
-        _replyService = replyService;
-        _logger = logger;
+        _replyService = replyService ?? throw new ArgumentNullException(nameof(replyService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     [HttpPost]
@@ -26,28 +29,15 @@ public class ReplyController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateReply([FromBody] ReplyForCreationDto replyDto)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
         try
         {
             var userId = GetUserIdFromClaims();
             var createdReply = await _replyService.CreateAsync(userId, replyDto);
-
-            // Trả về 201 Created
-            // (Giả sử không có endpoint GetById cho Reply, nên trả về object)
             return CreatedAtAction(null, new { id = createdReply.Id }, createdReply);
         }
-        catch (ArgumentException ex) // Bắt lỗi ReviewId không tồn tại
+        catch (ArgumentException ex)
         {
             return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception ex) // Bắt lỗi "FailedToSave"
-        {
-            _logger.LogError(ex, "Lỗi khi tạo reply cho user {UserId}", GetUserIdFromClaims());
-            return StatusCode(500, "Lỗi hệ thống khi tạo reply.");
         }
     }
 
@@ -58,11 +48,6 @@ public class ReplyController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateReply(Guid id, [FromBody] ReplyForUpdateDto replyDto)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
         try
         {
             var userId = GetUserIdFromClaims();
@@ -73,14 +58,9 @@ public class ReplyController : ControllerBase
         {
             return NotFound(new { message = ex.Message });
         }
-        catch (SecurityException ex) // Bắt lỗi "NotOwner"
+        catch (SecurityException)
         {
-            return Forbid(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Lỗi khi cập nhật reply {ReplyId} cho user {UserId}", id, GetUserIdFromClaims());
-            return StatusCode(500, "Lỗi hệ thống khi cập nhật reply.");
+            return Forbid();
         }
     }
 
@@ -100,14 +80,9 @@ public class ReplyController : ControllerBase
         {
             return NotFound(new { message = ex.Message });
         }
-        catch (SecurityException ex) // Bắt lỗi "NotOwner"
+        catch (SecurityException)
         {
-            return Forbid(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Lỗi khi xóa reply {ReplyId} cho user {UserId}", id, GetUserIdFromClaims());
-            return StatusCode(500, "Lỗi hệ thống khi xóa reply.");
+            return Forbid();
         }
     }
 
@@ -115,10 +90,9 @@ public class ReplyController : ControllerBase
     {
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+        if (string.IsNullOrWhiteSpace(userIdString) || !Guid.TryParse(userIdString, out var userId))
         {
-            _logger.LogWarning("Không thể tìm thấy hoặc phân tích UserId từ claims.");
-            throw new SecurityException("Thông tin người dùng không hợp lệ.");
+            throw new SecurityException("User identifier is missing or invalid in the security token.");
         }
 
         return userId;

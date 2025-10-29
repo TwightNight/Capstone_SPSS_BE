@@ -116,22 +116,22 @@ public class AuthenticationService : IAuthenticationService
 		await _tokenService.RevokeRefreshTokenAsync(refreshToken);
 	}
 
-	public async Task<string> RegisterAsync(RegisterRequest registerRequest)
+	public async Task<AuthUserDto> RegisterAsync(RegisterRequest registerRequest)
 	{
 		return await RegisterUserInternalAsync(registerRequest, "Customer");
 	}
 
-	public async Task<string> RegisterForManagerAsync(RegisterRequest registerRequest)
+	public async Task<AuthUserDto> RegisterForManagerAsync(RegisterRequest registerRequest)
 	{
 		return await RegisterUserInternalAsync(registerRequest, "Manager");
 	}
 
-	public async Task<string> RegisterForStaffAsync(RegisterRequest registerRequest)
+	public async Task<AuthUserDto> RegisterForStaffAsync(RegisterRequest registerRequest)
 	{
 		return await RegisterUserInternalAsync(registerRequest, "Staff");
 	}
 
-	private async Task<string> RegisterUserInternalAsync(RegisterRequest registerRequest, string roleName)
+	private async Task<AuthUserDto> RegisterUserInternalAsync(RegisterRequest registerRequest, string roleName)
 	{
 		if (await _userService.CheckUserNameExistsAsync(registerRequest.UserName))
 			throw new InvalidOperationException(string.Format(ExceptionMessageConstants.Authentication.UsernameTaken, registerRequest.UserName));
@@ -168,7 +168,9 @@ public class AuthenticationService : IAuthenticationService
             // 3. Commit
             await _unitOfWork.CommitTransactionAsync(); // Cả 2 thành công
 
-            return createdUser.UserId.ToString();
+			var mapItem = _mapper.Map<AuthUserDto>(createdUser);
+
+            return mapItem;
         }
         catch (Exception ex)
         {
