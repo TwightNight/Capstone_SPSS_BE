@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.Blog;
 using SPSS.Service.Services.Interfaces;
 using SPSS.Shared.Errors;
+using SPSS.Shared.Exceptions;
 using SPSS.Shared.Responses;
 using System;
 using System.Collections.Generic;
@@ -27,7 +28,6 @@ public class BlogController : ControllerBase
 
     [HttpGet]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(PagedResponse<BlogDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetBlogs([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
         var response = await _blogService.GetPagedAsync(pageNumber, pageSize);
@@ -36,8 +36,6 @@ public class BlogController : ControllerBase
 
     [HttpGet("{id:guid}")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(BlogWithDetailDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetBlogById(Guid id)
     {
         var blogDetail = await _blogService.GetByIdAsync(id);
@@ -45,34 +43,45 @@ public class BlogController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize]
-    [ProducesResponseType(typeof(BlogDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CreateBlog([FromBody] BlogForCreationDto blogDto)
     {
-        var userId = GetUserIdFromClaims();
+		if (!ModelState.IsValid)
+		{
+
+			var errorMessages = ModelState.Values
+				.SelectMany(v => v.Errors)
+				.Select(e => e.ErrorMessage)
+				.ToList();
+
+			throw new ValidationException(string.Join(" | ", errorMessages));
+		}
+		var userId = GetUserIdFromClaims();
         var createdBlog = await _blogService.CreateBlogAsync(blogDto, userId);
         return CreatedAtAction(nameof(GetBlogById), new { id = createdBlog.Id }, createdBlog);
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize]
-    [ProducesResponseType(typeof(BlogDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateBlog(Guid id, [FromBody] BlogForUpdateDto blogDto)
     {
-        var userId = GetUserIdFromClaims();
+		if (!ModelState.IsValid)
+		{
+
+			var errorMessages = ModelState.Values
+				.SelectMany(v => v.Errors)
+				.Select(e => e.ErrorMessage)
+				.ToList();
+
+			throw new ValidationException(string.Join(" | ", errorMessages));
+		}
+		var userId = GetUserIdFromClaims();
         var updatedBlog = await _blogService.UpdateBlogAsync(id, blogDto, userId);
         return Ok(updatedBlog);
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteBlog(Guid id)
     {
         var userId = GetUserIdFromClaims();

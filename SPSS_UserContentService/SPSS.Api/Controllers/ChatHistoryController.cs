@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System;
 using Microsoft.Extensions.Logging;
 using SPSS.Shared.Errors;
+using SPSS.Shared.Exceptions;
 
 namespace SPSS.Api.Controllers;
 
@@ -27,7 +28,6 @@ public class ChatHistoryController : ControllerBase
     }
 
     [HttpGet("sessions")]
-    [ProducesResponseType(typeof(IEnumerable<string>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMyRecentSessionIds([FromQuery] int maxSessions = 10)
     {
         var userId = GetUserIdFromClaims();
@@ -36,8 +36,6 @@ public class ChatHistoryController : ControllerBase
     }
 
     [HttpGet("{sessionId}")]
-    [ProducesResponseType(typeof(IEnumerable<ChatHistoryDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetMyChatSession(string sessionId)
     {
         var userId = GetUserIdFromClaims();
@@ -46,8 +44,6 @@ public class ChatHistoryController : ControllerBase
     }
 
     [HttpGet("recent-messages")]
-    [ProducesResponseType(typeof(IEnumerable<ChatHistoryDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetMyRecentMessages([FromQuery] int limit = 100)
     {
         var userId = GetUserIdFromClaims();
@@ -56,11 +52,19 @@ public class ChatHistoryController : ControllerBase
     }
 
     [HttpPost]
-    [ProducesResponseType(typeof(ChatHistoryDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> SaveChatMessage([FromBody] ChatHistoryForCreationDto chatDto)
     {
-        var userId = GetUserIdFromClaims();
+		if (!ModelState.IsValid)
+		{
+
+			var errorMessages = ModelState.Values
+				.SelectMany(v => v.Errors)
+				.Select(e => e.ErrorMessage)
+				.ToList();
+
+			throw new ValidationException(string.Join(" | ", errorMessages));
+		}
+		var userId = GetUserIdFromClaims();
         chatDto.UserId = userId; 
 
         var createdMessage = await _chatService.SaveChatMessageAsync(chatDto);
