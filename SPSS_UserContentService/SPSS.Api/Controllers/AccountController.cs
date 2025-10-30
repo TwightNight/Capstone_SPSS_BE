@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.Account;
 using SPSS.Service.Services.Interfaces;
+using SPSS.Shared.Errors;
 using System;
 using System.Security;
 using System.Security.Claims;
@@ -25,70 +26,35 @@ public class AccountController : ControllerBase
 
     [HttpGet]
     [ProducesResponseType(typeof(AccountDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetMyAccount()
     {
-        try
-        {
-            var userId = GetUserIdFromClaims();
-            var accountInfo = await _userService.GetAccountInfoAsync(userId);
-            return Ok(accountInfo);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogWarning(ex, "Account info not found for the current user.");
-            return NotFound(new { message = ex.Message });
-        }
+        var userId = GetUserIdFromClaims();
+        var accountInfo = await _userService.GetAccountInfoAsync(userId);
+        return Ok(accountInfo);
     }
 
     [HttpPut]
     [ProducesResponseType(typeof(AccountDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateMyAccount([FromBody] AccountForUpdateDto dto)
     {
-        try
-        {
-            var userId = GetUserIdFromClaims();
-            var updatedAccount = await _userService.UpdateAccountInfoAsync(userId, dto);
-            return Ok(updatedAccount);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
+        var userId = GetUserIdFromClaims();
+        var updatedAccount = await _userService.UpdateAccountInfoAsync(userId, dto);
+        return Ok(updatedAccount);
     }
 
     [HttpPatch("avatar")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateMyAvatar([FromBody] UpdateAvatarRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request?.AvatarUrl))
-        {
-            return BadRequest(new { message = "The AvatarUrl field is required." });
-        }
-
-        try
-        {
-            var userId = GetUserIdFromClaims();
-            var oldAvatarUrl = await _userService.UpdateAvatarAsync(userId, request.AvatarUrl);
-            return Ok(new { oldAvatar = oldAvatarUrl, newAvatar = request.AvatarUrl });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var userId = GetUserIdFromClaims();
+        var oldAvatarUrl = await _userService.UpdateAvatarAsync(userId, request.AvatarUrl);
+        return Ok(new { oldAvatar = oldAvatarUrl, newAvatar = request.AvatarUrl });
     }
 
     private Guid GetUserIdFromClaims()

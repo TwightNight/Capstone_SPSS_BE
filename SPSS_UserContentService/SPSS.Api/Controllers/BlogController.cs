@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.Blog;
 using SPSS.Service.Services.Interfaces;
+using SPSS.Shared.Errors;
 using SPSS.Shared.Responses;
 using System;
 using System.Collections.Generic;
@@ -36,87 +37,47 @@ public class BlogController : ControllerBase
     [HttpGet("{id:guid}")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(BlogWithDetailDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetBlogById(Guid id)
     {
-        try
-        {
-            var blogDetail = await _blogService.GetByIdAsync(id);
-            return Ok(blogDetail);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
+        var blogDetail = await _blogService.GetByIdAsync(id);
+        return Ok(blogDetail);
     }
 
     [HttpPost]
     [Authorize]
     [ProducesResponseType(typeof(BlogDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateBlog([FromBody] BlogForCreationDto blogDto)
     {
-        try
-        {
-            var userId = GetUserIdFromClaims();
-            var createdBlog = await _blogService.CreateBlogAsync(blogDto, userId);
-            return CreatedAtAction(nameof(GetBlogById), new { id = createdBlog.Id }, createdBlog);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var userId = GetUserIdFromClaims();
+        var createdBlog = await _blogService.CreateBlogAsync(blogDto, userId);
+        return CreatedAtAction(nameof(GetBlogById), new { id = createdBlog.Id }, createdBlog);
     }
 
     [HttpPut("{id:guid}")]
     [Authorize]
     [ProducesResponseType(typeof(BlogDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateBlog(Guid id, [FromBody] BlogForUpdateDto blogDto)
     {
-        try
-        {
-            var userId = GetUserIdFromClaims();
-            var updatedBlog = await _blogService.UpdateBlogAsync(id, blogDto, userId);
-            return Ok(updatedBlog);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (SecurityException)
-        {
-            return Forbid();
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var userId = GetUserIdFromClaims();
+        var updatedBlog = await _blogService.UpdateBlogAsync(id, blogDto, userId);
+        return Ok(updatedBlog);
     }
 
     [HttpDelete("{id:guid}")]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteBlog(Guid id)
     {
-        try
-        {
-            var userId = GetUserIdFromClaims();
-            await _blogService.DeleteAsync(id, userId);
-            return NoContent();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (SecurityException)
-        {
-            return Forbid();
-        }
+        var userId = GetUserIdFromClaims();
+        await _blogService.DeleteAsync(id, userId);
+        return NoContent();
     }
 
     private Guid GetUserIdFromClaims()

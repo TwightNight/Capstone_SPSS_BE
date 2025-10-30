@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.Role;
 using SPSS.Service.Services.Interfaces;
+using SPSS.Shared.Errors;
 using SPSS.Shared.Responses;
 using System;
 using System.Collections.Generic;
@@ -11,7 +12,7 @@ namespace SPSS.Api.Controllers;
 
 [ApiController]
 [Route("api/roles")]
-//[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin")] // Bỏ comment để bảo vệ các endpoint này
 public class RoleController : ControllerBase
 {
     private readonly IRoleService _roleService;
@@ -33,101 +34,50 @@ public class RoleController : ControllerBase
 
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(RoleDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetRoleById(Guid id)
     {
-        try
-        {
-            var role = await _roleService.GetByIdAsync(id);
-            return Ok(role);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
+        var role = await _roleService.GetByIdAsync(id);
+        return Ok(role);
     }
 
     [HttpGet("name/{roleName}")]
     [ProducesResponseType(typeof(RoleDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetRoleByName(string roleName)
     {
-        try
-        {
-            var role = await _roleService.GetByNameAsync(roleName);
-            return Ok(role);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
+        var role = await _roleService.GetByNameAsync(roleName);
+        return Ok(role);
     }
 
     [HttpPost]
     [ProducesResponseType(typeof(RoleDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CreateRole([FromBody] RoleForCreationDto roleDto)
     {
-        try
-        {
-            var createdRole = await _roleService.CreateAsync(roleDto);
-            return CreatedAtAction(nameof(GetRoleById), new { id = createdRole.RoleId }, createdRole);
-        }
-        catch (ArgumentNullException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
+        var createdRole = await _roleService.CreateAsync(roleDto);
+        return CreatedAtAction(nameof(GetRoleById), new { id = createdRole.RoleId }, createdRole);
     }
 
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(RoleDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateRole(Guid id, [FromBody] RoleForUpdateDto roleDto)
     {
-        try
-        {
-            var updatedRole = await _roleService.UpdateAsync(id, roleDto);
-            return Ok(updatedRole);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (ArgumentNullException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
+        var updatedRole = await _roleService.UpdateAsync(id, roleDto);
+        return Ok(updatedRole);
     }
 
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status400BadRequest)]  
     public async Task<IActionResult> DeleteRole(Guid id)
     {
-        try
-        {
-            await _roleService.DeleteAsync(id);
-            return NoContent();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        await _roleService.DeleteAsync(id);
+        return NoContent();
     }
 }

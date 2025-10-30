@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.User;
 using SPSS.Service.Services.Interfaces;
+using SPSS.Shared.Errors;
 using SPSS.Shared.Responses;
 using System;
 using System.Security;
@@ -34,74 +35,41 @@ public class UsersController : ControllerBase
 
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetUserById(Guid id)
     {
-        try
-        {
-            var user = await _userService.GetByIdAsync(id);
-            return Ok(user);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
+        var user = await _userService.GetByIdAsync(id);
+        return Ok(user);
     }
 
     [HttpPost]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CreateUser([FromBody] UserForCreationDto dto)
     {
-        try
-        {
-            var createdUser = await _userService.CreateAsync(dto);
-            return CreatedAtAction(nameof(GetUserById), new { id = createdUser.UserId }, createdUser);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
+        var createdUser = await _userService.CreateAsync(dto);
+        return CreatedAtAction(nameof(GetUserById), new { id = createdUser.UserId }, createdUser);
     }
 
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UserForUpdateDto dto)
     {
-        try
-        {
-            // Note: The service should be updated to accept the updater's ID.
-            var updatedUser = await _userService.UpdateAsync(id, dto);
-            return Ok(updatedUser);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
+        var updatedUser = await _userService.UpdateAsync(id, dto);
+        return Ok(updatedUser);
     }
 
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status409Conflict)] // Nếu không thể xóa user vì lý do nghiệp vụ
     public async Task<IActionResult> DeleteUser(Guid id)
     {
-        try
-        {
-            // Note: The service should be updated to accept the deleter's ID.
-            await _userService.DeleteAsync(id);
-            return NoContent();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
+        await _userService.DeleteAsync(id);
+        return NoContent();
     }
 }

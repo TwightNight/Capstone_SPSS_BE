@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.Authentication;
 using SPSS.Service.Services.Interfaces;
+using SPSS.Shared.Errors;
 using System;
 using System.Security;
 using System.Security.Claims;
@@ -25,125 +26,74 @@ public class AuthenticationController : ControllerBase
     [HttpPost("login")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        try
-        {
-            var response = await _authService.LoginAsync(request);
-            return Ok(response);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(new { message = ex.Message });
-        }
+        var response = await _authService.LoginAsync(request);
+        return Ok(response);
     }
 
     [HttpPost("register")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(object), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
-        try
-        {
-            var user = await _authService.RegisterAsync(request);
-            return StatusCode(StatusCodes.Status201Created, new { user });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
-        //catch (ArgumentException ex)
-        //{
-        //    return BadRequest(new { message = ex.Message });
-        //}
+        var user = await _authService.RegisterAsync(request);
+        return StatusCode(StatusCodes.Status201Created, new { user });
     }
 
     [HttpPost("register-privileged")]
     [Authorize(Roles = "Admin,Manager")]
     [ProducesResponseType(typeof(object), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> RegisterPrivilegedUser([FromBody] PrivilegedRegisterRequest request)
     {
-        try
+        var user = new AuthUserDto();
+        switch (request.RoleName)
         {
-            var user = new AuthUserDto();
-            switch (request.RoleName)
-            {
-                case "Manager":
-                    if (!User.IsInRole("Admin"))
-                    {
-                        return Forbid();
-                    }
-                    user = await _authService.RegisterForManagerAsync(request);
-                    break;
+            case "Manager":
+                if (!User.IsInRole("Admin"))
+                {
+                    return Forbid(); 
+                }
+                user = await _authService.RegisterForManagerAsync(request);
+                break;
 
-                case "Staff":
-                    user = await _authService.RegisterForStaffAsync(request);
-                    break;
+            case "Staff":
+                user = await _authService.RegisterForStaffAsync(request);
+                break;
 
-                default:
-                    return BadRequest(new { message = "Invalid or unsupported role specified." });
-            }
-            return StatusCode(StatusCodes.Status201Created, new { user });
+            default:
+                return BadRequest(new { message = "Invalid or unsupported role specified." });
         }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        return StatusCode(StatusCodes.Status201Created, new { user });
     }
 
     [HttpPost("change-password")]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {
-        try
-        {
-            var userId = GetUserIdFromClaims();
-            await _authService.ChangePasswordAsync(userId, request.CurrentPassword, request.NewPassword);
-            return NoContent();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var userId = GetUserIdFromClaims();
+        await _authService.ChangePasswordAsync(userId, request.CurrentPassword, request.NewPassword);
+        return NoContent();
     }
 
     [HttpPost("refresh-token")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
     {
-        try
-        {
-            var expiredAccessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-            var response = await _authService.RefreshTokenAsync(expiredAccessToken, request.RefreshToken);
-            return Ok(response);
-        }
-        catch (SecurityException ex)
-        {
-            return Unauthorized(new { message = ex.Message });
-        }
+        var expiredAccessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+        var response = await _authService.RefreshTokenAsync(expiredAccessToken, request.RefreshToken);
+        return Ok(response);
     }
 
     [HttpPost("logout")]
@@ -158,19 +108,12 @@ public class AuthenticationController : ControllerBase
     [HttpPost("assign-role")]
     [Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> AssignRole([FromBody] AssignRoleRequest  request)
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> AssignRole([FromBody] AssignRoleRequest request)
     {
-        try
-        {
-            await _authService.AssignRoleToUser(request.UserId, request.RoleName);
-            return NoContent();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
+        await _authService.AssignRoleToUser(request.UserId, request.RoleName);
+        return NoContent();
     }
 
     private Guid GetUserIdFromClaims()

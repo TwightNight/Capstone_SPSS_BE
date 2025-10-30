@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using SPSS.Shared.Errors;
 using SPSS.Shared.Exceptions;
 using System.Net;
+using System.Security;
 using System.Security.Authentication;
 using System.Text.Json;
 
@@ -89,7 +90,8 @@ namespace  SPSS.Api.Middlewares
 
 			switch (exception)
 			{
-				case AuthenticationException:
+                case SecurityException:
+                case AuthenticationException:
 					error.StatusCode = ((int)HttpStatusCode.Unauthorized).ToString();
 					error.Message = exception.Message;
 					context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
