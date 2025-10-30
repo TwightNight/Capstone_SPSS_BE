@@ -1,0 +1,144 @@
+{
+  "Routes": [
+    {
+      "RouteName": "Addresses API",
+      "TagName": "AddressesService",
+      "RouteIsCaseSensitive": false,
+      "DownstreamPathTemplate": "/api/addresses/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7118
+        }
+      ],
+      "UpstreamPathTemplate": "/api/addresses/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer"
+      }
+    },
+    {
+      "RouteName": "Countries API - Public - List",
+      "TagName": "CountriesService",
+      "RouteIsCaseSensitive": false,
+      "DownstreamPathTemplate": "/api/countries",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7118
+        }
+      ],
+      "UpstreamPathTemplate": "/api/countries",
+      "UpstreamHttpMethod": [ "GET" ]
+    },
+    {
+      "RouteName": "Countries API - Public - GetById",
+      "TagName": "CountriesService",
+      "RouteIsCaseSensitive": false,
+      "DownstreamPathTemplate": "/api/countries/{id}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7118
+        }
+      ],
+      "UpstreamPathTemplate": "/api/countries/{id}",
+      "UpstreamHttpMethod": [ "GET" ]
+    },
+    {
+      "RouteName": "Countries API - Admin (Create/Update/Delete)",
+      "TagName": "CountriesService",
+      "RouteIsCaseSensitive": false,
+      "DownstreamPathTemplate": "/api/countries/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7118
+        }
+      ],
+      "UpstreamPathTemplate": "/api/countries/{everything}",
+      "UpstreamHttpMethod": [ "POST", "PUT", "DELETE" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      }
+    },
+    {
+      "RouteName": "Blogs API - Public - List",
+      "TagName": "BlogsService",
+      "RouteIsCaseSensitive": false,
+      "DownstreamPathTemplate": "/api/blogs",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7118 
+        }
+      ],
+      "UpstreamPathTemplate": "/api/blogs",
+      "UpstreamHttpMethod": [ "GET" ]
+    },
+    {
+      "RouteName": "Blogs API - Public - GetById",
+      "TagName": "BlogsService",
+      "RouteIsCaseSensitive": false,
+      "DownstreamPathTemplate": "/api/blogs/{id}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7118 
+        }
+      ],
+      "UpstreamPathTemplate": "/api/blogs/{id}",
+      "UpstreamHttpMethod": [ "GET" ]
+    },
+    {
+      "RouteName": "Blogs API - Admin (Create/Update/Delete)",
+      "TagName": "BlogsService",
+      "RouteIsCaseSensitive": false,
+      "DownstreamPathTemplate": "/api/blogs/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7118
+        }
+      ],
+      "UpstreamPathTemplate": "/api/blogs/{everything}",
+      "UpstreamHttpMethod": [ "POST", "PUT", "DELETE" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      }
+    },
+    {
+      "RouteName": "Roles API - Admin",
+      "TagName": "RolesService",
+      "RouteIsCaseSensitive": false,
+      "DownstreamPathTemplate": "/api/roles/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7118 
+        }
+      ],
+      "UpstreamPathTemplate": "/api/roles/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer"
+      },
+      "RouteClaimsRequirement": {
+        "role": "Admin"
+      }
+    }
+  ],
+  "GlobalConfiguration": {
+    "BaseUrl": "https://localhost:7279"
+  }
+}

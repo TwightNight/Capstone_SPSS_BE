@@ -1,9 +1,21 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35931.197 d17.13
+VisualStudioVersion = 17.13.35931.197
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SPSS.ApiGateway", "SPSS.ApiGateway\SPSS.ApiGateway.csproj", "{DDE22CA7-ABEB-4D60-82A0-A34B278F0ED9}"
+EndProject
 Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DDE22CA7-ABEB-4D60-82A0-A34B278F0ED9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DDE22CA7-ABEB-4D60-82A0-A34B278F0ED9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DDE22CA7-ABEB-4D60-82A0-A34B278F0ED9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DDE22CA7-ABEB-4D60-82A0-A34B278F0ED9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
