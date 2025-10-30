@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -14,9 +15,9 @@ using SPSS.Service.Services.Interfaces;
 using SPSS.Shared.Base.Implementations;
 using SPSS.Shared.Base.Interfaces;
 using SPSS.Shared.Helpers;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using System.IdentityModel.Tokens.Jwt;
 
 namespace SPSS.Api;
 
@@ -113,6 +114,11 @@ public static class DependencyInjection
             });
 
         services.AddAuthorization();
+        services.Configure<ApiBehaviorOptions>(options =>
+        {
+            options.SuppressModelStateInvalidFilter = true;
+        });
+
 
         return services;
     }
