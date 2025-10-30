@@ -5,6 +5,7 @@ using SPSS.BusinessObject.Dto.VerifyOtp;
 using SPSS.Repository.Repositories.Interfaces;
 using SPSS.Service.Services.Interfaces;
 using SPSS.Shared.Errors;
+using SPSS.Shared.Exceptions;
 using System;
 using System.Security;
 using System.Security.Claims;
@@ -31,6 +32,16 @@ public class AuthenticationController : ControllerBase
     [ProducesResponseType(typeof(Error), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
+        if (!ModelState.IsValid)
+        {
+
+            var errorMessages = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+
+            throw new ValidationException(string.Join(" | ", errorMessages));
+        }
         var response = await _authService.LoginAsync(request);
         return Ok(response);
     }
