@@ -7,6 +7,6 @@ namespace SPSS.BusinessObject.Dto.Authentication;
 /// </summary>
 public class LogoutRequest
 {
-    [Required(ErrorMessage = "Refresh token là bắt buộc")]
+    [Required(ErrorMessage = "Refresh token is required.")]
     public string RefreshToken { get; set; }
 }

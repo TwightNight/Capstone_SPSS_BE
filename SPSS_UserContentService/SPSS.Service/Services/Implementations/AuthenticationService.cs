@@ -11,6 +11,7 @@ using SPSS.Shared.Helpers;
 using SPSS.Shared.Constants;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
+using SPSS.BusinessObject.Dto.VerifyOtp;
 
 namespace SPSS.Service.Services.Implementations;
 
@@ -235,19 +236,18 @@ public class AuthenticationService : IAuthenticationService
         var salt = OtpHelper.CreateSalt();
         var hashed = OtpHelper.HashOtp(code, key, salt);
 
-        var verification = new EmailVerification
+        // THAY ĐỔI: Sử dụng DTO và Mapper để tạo entity
+        var verificationDto = new EmailVerificationForCreationDto
         {
-            Id = Guid.NewGuid(),
             UserId = userId,
             Email = email,
             CodeHash = hashed,
             Salt = salt,
-            ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(expiryMinutes),
-            IsUsed = false,
-            IsRevoked = false,
-            Attempts = 0,
-            CreatedAt = DateTimeOffset.UtcNow
+            ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(expiryMinutes)
         };
+
+        var verification = _mapper.Map<EmailVerification>(verificationDto);
+        // KẾT THÚC THAY ĐỔI
 
         // revoke old pending ones
         await _unitOfWork.GetRepository<IEmailVerificationRepository>().RevokeAllByUserAsync(userId);
@@ -265,6 +265,7 @@ public class AuthenticationService : IAuthenticationService
 
     public async Task VerifyAccountByOtpAsync(string email, string code)
     {
+        // ... Logic phương thức này không thay đổi
         var repo = _unitOfWork.GetRepository<IEmailVerificationRepository>();
         var verification = await repo.GetLatestByEmailAsync(email);
         if (verification == null)
@@ -308,6 +309,7 @@ public class AuthenticationService : IAuthenticationService
 
         await _unitOfWork.SaveChangesAsync();
     }
+
     public async Task ResendVerificationOtpAsync(string email)
     {
         if (string.IsNullOrWhiteSpace(email))
@@ -336,10 +338,9 @@ public class AuthenticationService : IAuthenticationService
 
         // 4. Revoke old pending ones
         await emailVerRepo.RevokeAllByUserAsync(user.UserId);
-        // Note: RevokeAllByUserAsync marks entities -> need to SaveChanges before creating new one so DB state consistent
         await _unitOfWork.SaveChangesAsync();
 
-        // 5. Create/send new OTP (reuse earlier SendVerificationOtp logic or inline)
+        // 5. Create/send new OTP
         var otpLength = int.Parse(_configuration["Otp:Length"] ?? "6");
         var expiryMinutes = int.Parse(_configuration["Otp:ExpiryMinutes"] ?? "10");
         var key = _configuration["Otp:Key"] ?? throw new InvalidOperationException("Otp key not configured");
@@ -348,29 +349,26 @@ public class AuthenticationService : IAuthenticationService
         var salt = OtpHelper.CreateSalt();
         var hashed = OtpHelper.HashOtp(code, key, salt);
 
-        var verification = new EmailVerification
+        // THAY ĐỔI: Sử dụng DTO và Mapper để tạo entity
+        var verificationDto = new EmailVerificationForCreationDto
         {
-            Id = Guid.NewGuid(),
             UserId = user.UserId,
             Email = email,
             CodeHash = hashed,
             Salt = salt,
-            ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(expiryMinutes),
-            IsUsed = false,
-            IsRevoked = false,
-            Attempts = 0,
-            CreatedAt = DateTimeOffset.UtcNow
+            ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(expiryMinutes)
         };
+        var verification = _mapper.Map<EmailVerification>(verificationDto);
+        // KẾT THÚC THAY ĐỔI
 
         emailVerRepo.Add(verification);
         await _unitOfWork.SaveChangesAsync();
 
-        // 6. Send email (email body/template can be improved)
+        // 6. Send email
         var subject = "Mã xác thực tài khoản của bạn";
         var body = $"<p>Xin chào {user.UserName},</p><p>Mã xác thực (OTP) của bạn là: <strong>{code}</strong></p>" +
                    $"<p>Mã có hiệu lực trong {expiryMinutes} phút.</p>";
 
         await _emailSender.SendEmailAsync(email, subject, body);
     }
-
 }

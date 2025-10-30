@@ -145,7 +145,7 @@ public static class DependencyInjection
     {
         //services.AddAutoMapper(typeof(UserService).Assembly);
         services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
-        services.AddSingleton<EmailSender>();
+        services.AddScoped<EmailSender>();
 
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IAddressService, AddressService>();

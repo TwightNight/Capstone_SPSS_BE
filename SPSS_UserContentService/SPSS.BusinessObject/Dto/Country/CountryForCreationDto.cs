@@ -9,11 +9,11 @@ namespace SPSS.BusinessObject.Dto.Country;
 
 public class CountryForCreationDto
 {
-    [Required]
-    [StringLength(10)]
+    [Required(ErrorMessage = "Country code is required.")]
+    [StringLength(10, ErrorMessage = "Country code cannot exceed 10 characters.")]
     public string CountryCode { get; set; } = null!;
 
-    [Required]
-    [StringLength(100)]
+    [Required(ErrorMessage = "Country name is required.")]
+    [StringLength(100, ErrorMessage = "Country name cannot exceed 100 characters.")]
     public string CountryName { get; set; } = null!;
 }
