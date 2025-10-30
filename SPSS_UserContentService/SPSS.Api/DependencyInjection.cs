@@ -14,7 +14,9 @@ using SPSS.Service.Services.Interfaces;
 using SPSS.Shared.Base.Implementations;
 using SPSS.Shared.Base.Interfaces;
 using SPSS.Shared.Helpers;
+using System.Security.Claims;
 using System.Text;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace SPSS.Api;
 
@@ -79,7 +81,34 @@ public static class DependencyInjection
                     ValidIssuer = configuration["JwtSettings:Issuer"],
                     ValidAudience = configuration["JwtSettings:Audience"],
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-                    ClockSkew = TimeSpan.Zero
+                    ClockSkew = TimeSpan.Zero,
+                    RoleClaimType = ClaimTypes.Role,
+                    NameClaimType = ClaimTypes.Name
+                };
+
+                // Workaround: dùng JwtSecurityTokenHandler thay vì JsonWebTokenHandler
+                options.SecurityTokenValidators.Clear();
+                options.SecurityTokenValidators.Add(new JwtSecurityTokenHandler());
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnAuthenticationFailed = context =>
+                    {
+                        var logger = context.HttpContext.RequestServices
+                                          .GetRequiredService<ILoggerFactory>()
+                                          .CreateLogger("JwtAuth");
+                        logger.LogError(context.Exception, "Jwt authentication failed: {Message}", context.Exception.Message);
+                        return Task.CompletedTask;
+                    },
+                    OnTokenValidated = context =>
+                    {
+                        var logger = context.HttpContext.RequestServices
+                                          .GetRequiredService<ILoggerFactory>()
+                                          .CreateLogger("JwtAuth");
+                        logger.LogInformation("Token validated. Claims: {Claims}",
+                            string.Join(", ", context.Principal.Claims.Select(c => $"{c.Type}={c.Value}")));
+                        return Task.CompletedTask;
+                    }
                 };
             });
 
@@ -116,6 +145,7 @@ public static class DependencyInjection
     {
         //services.AddAutoMapper(typeof(UserService).Assembly);
         services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+        services.AddSingleton<EmailSender>();
 
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IAddressService, AddressService>();
@@ -129,6 +159,8 @@ public static class DependencyInjection
         services.AddScoped<ITransactionService, TransactionService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
+        services.AddScoped<IEmailVerificationRepository, EmailVerificationRepository>();
+
 
         return services;
     }

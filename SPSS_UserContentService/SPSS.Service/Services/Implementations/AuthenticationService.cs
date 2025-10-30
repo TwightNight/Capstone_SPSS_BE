@@ -10,6 +10,7 @@ using SPSS.Service.Services.Interfaces;
 using SPSS.Shared.Helpers;
 using SPSS.Shared.Constants;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Configuration;
 
 namespace SPSS.Service.Services.Implementations;
 
@@ -21,8 +22,21 @@ public class AuthenticationService : IAuthenticationService
 	private readonly IUserService _userService;
 	private readonly IRoleService _roleService;
 	private readonly IPasswordHasher _passwordHasher;
+	private readonly IConfiguration _configuration;
+	private readonly EmailSender _emailSender;
+	public AuthenticationService(IConfiguration configuration, EmailSender emailSender, IRoleService roleService, IUserService userService, IUnitOfWork unitOfWork, ITokenService tokenService, IMapper mapper, IPasswordHasher passwordHasher)
+	{
+		_configuration = configuration;
+		_emailSender = emailSender;
+		_unitOfWork = unitOfWork;
+		_tokenService = tokenService;
+		_mapper = mapper;
+		_userService = userService;
+		_roleService = roleService;
+		_passwordHasher = passwordHasher;
+    }
 
-	public AuthenticationService(IRoleService roleService, IUserService userService, IUnitOfWork unitOfWork, ITokenService tokenService, IMapper mapper, IPasswordHasher passwordHasher)
+    public AuthenticationService(IRoleService roleService, IUserService userService, IUnitOfWork unitOfWork, ITokenService tokenService, IMapper mapper, IPasswordHasher passwordHasher)
 	{
 		_unitOfWork = unitOfWork;
 		_tokenService = tokenService;
@@ -167,19 +181,15 @@ public class AuthenticationService : IAuthenticationService
 
             // 3. Commit
             await _unitOfWork.CommitTransactionAsync(); // Cả 2 thành công
+            await SendVerificationOtpAsync(createdUser.UserId, createdUser.EmailAddress);
 
-			var mapItem = _mapper.Map<AuthUserDto>(createdUser);
+            var mapItem = _mapper.Map<AuthUserDto>(createdUser);
 
             return mapItem;
         }
         catch (Exception ex)
         {
-            await _unitOfWork.RollbackTransactionAsync(); // Bất kỳ lỗi nào xảy ra, hủy bỏ tất cả
-
-            // Log lỗi
-            // _logger.LogError(ex, "Đăng ký thất bại cho user {UserName}", registerRequest.UserName);
-
-            // Ném lỗi ra ngoài để controller bắt
+            await _unitOfWork.RollbackTransactionAsync(); 
             throw new ApplicationException(string.Format(ExceptionMessageConstants.Authentication.RegistrationFailed, ex.Message), ex);
         }
     }
@@ -214,4 +224,153 @@ public class AuthenticationService : IAuthenticationService
 	{
 		return Regex.IsMatch(password, @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':""\\|,.<>/?]).{8,}$");
 	}
+
+    public async Task SendVerificationOtpAsync(Guid userId, string email)
+    {
+        var otpLength = int.Parse(_configuration["Otp:Length"] ?? "6");
+        var expiryMinutes = int.Parse(_configuration["Otp:ExpiryMinutes"] ?? "10");
+        var key = _configuration["Otp:Key"] ?? throw new InvalidOperationException("Otp key not configured");
+
+        var code = OtpHelper.GenerateNumericOtp(otpLength);
+        var salt = OtpHelper.CreateSalt();
+        var hashed = OtpHelper.HashOtp(code, key, salt);
+
+        var verification = new EmailVerification
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Email = email,
+            CodeHash = hashed,
+            Salt = salt,
+            ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(expiryMinutes),
+            IsUsed = false,
+            IsRevoked = false,
+            Attempts = 0,
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+
+        // revoke old pending ones
+        await _unitOfWork.GetRepository<IEmailVerificationRepository>().RevokeAllByUserAsync(userId);
+
+        _unitOfWork.GetRepository<IEmailVerificationRepository>().Add(verification);
+        await _unitOfWork.SaveChangesAsync();
+
+        // send email
+        var subject = "Mã xác thực tài khoản của bạn";
+        var body = $"<p>Xin chào,</p><p>Mã xác thực (OTP) của bạn là: <strong>{code}</strong></p>" +
+                   $"<p>Mã có hiệu lực trong {expiryMinutes} phút.</p>";
+
+        await _emailSender.SendEmailAsync(email, subject, body);
+    }
+
+    public async Task VerifyAccountByOtpAsync(string email, string code)
+    {
+        var repo = _unitOfWork.GetRepository<IEmailVerificationRepository>();
+        var verification = await repo.GetLatestByEmailAsync(email);
+        if (verification == null)
+            throw new KeyNotFoundException("Verification record not found.");
+
+        if (verification.IsUsed || verification.IsRevoked)
+            throw new InvalidOperationException("This verification code is no longer valid.");
+
+        if (verification.ExpiresAt < DateTimeOffset.UtcNow)
+        {
+            verification.IsRevoked = true;
+            repo.Update(verification);
+            await _unitOfWork.SaveChangesAsync();
+            throw new InvalidOperationException("Verification code expired.");
+        }
+
+        var key = _configuration["Otp:Key"] ?? throw new InvalidOperationException("Otp key not configured");
+        var hashed = OtpHelper.HashOtp(code, key, verification.Salt);
+
+        if (hashed != verification.CodeHash)
+        {
+            verification.Attempts++;
+            if (verification.Attempts >= int.Parse(_configuration["Otp:MaxAttempts"] ?? "5"))
+            {
+                verification.IsRevoked = true;
+            }
+            repo.Update(verification);
+            await _unitOfWork.SaveChangesAsync();
+            throw new UnauthorizedAccessException("Invalid verification code.");
+        }
+
+        // success
+        verification.IsUsed = true;
+        repo.Update(verification);
+
+        // kích hoạt tài khoản
+        var user = await _unitOfWork.GetRepository<IUserRepository>().GetByIdAsync(verification.UserId);
+        if (user == null) throw new KeyNotFoundException("User not found.");
+        user.Status = "Active";
+        _unitOfWork.GetRepository<IUserRepository>().Update(user);
+
+        await _unitOfWork.SaveChangesAsync();
+    }
+    public async Task ResendVerificationOtpAsync(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            throw new ArgumentException("Email is required.", nameof(email));
+
+        // 1. Tìm user theo email
+        var user = await _unitOfWork.GetRepository<IUserRepository>().Entities
+                     .FirstOrDefaultAsync(u => u.EmailAddress == email && !u.IsDeleted);
+
+        if (user == null)
+            throw new KeyNotFoundException("User not found.");
+
+        // 2. Nếu user đã active, không cần gửi
+        if (string.Equals(user.Status, "Active", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Account already activated.");
+
+        // 3. Lấy OTP mới nhất để kiểm tra cooldown
+        var emailVerRepo = _unitOfWork.GetRepository<IEmailVerificationRepository>();
+        var last = await emailVerRepo.GetLatestByEmailAsync(email);
+
+        var resendCooldownSec = int.Parse(_configuration["Otp:ResendCooldownSeconds"] ?? "60");
+        if (last != null && (DateTimeOffset.UtcNow - last.CreatedAt).TotalSeconds < resendCooldownSec)
+        {
+            throw new InvalidOperationException($"Please wait before requesting another code. Try again in {resendCooldownSec} seconds.");
+        }
+
+        // 4. Revoke old pending ones
+        await emailVerRepo.RevokeAllByUserAsync(user.UserId);
+        // Note: RevokeAllByUserAsync marks entities -> need to SaveChanges before creating new one so DB state consistent
+        await _unitOfWork.SaveChangesAsync();
+
+        // 5. Create/send new OTP (reuse earlier SendVerificationOtp logic or inline)
+        var otpLength = int.Parse(_configuration["Otp:Length"] ?? "6");
+        var expiryMinutes = int.Parse(_configuration["Otp:ExpiryMinutes"] ?? "10");
+        var key = _configuration["Otp:Key"] ?? throw new InvalidOperationException("Otp key not configured");
+
+        var code = OtpHelper.GenerateNumericOtp(otpLength);
+        var salt = OtpHelper.CreateSalt();
+        var hashed = OtpHelper.HashOtp(code, key, salt);
+
+        var verification = new EmailVerification
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.UserId,
+            Email = email,
+            CodeHash = hashed,
+            Salt = salt,
+            ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(expiryMinutes),
+            IsUsed = false,
+            IsRevoked = false,
+            Attempts = 0,
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+
+        emailVerRepo.Add(verification);
+        await _unitOfWork.SaveChangesAsync();
+
+        // 6. Send email (email body/template can be improved)
+        var subject = "Mã xác thực tài khoản của bạn";
+        var body = $"<p>Xin chào {user.UserName},</p><p>Mã xác thực (OTP) của bạn là: <strong>{code}</strong></p>" +
+                   $"<p>Mã có hiệu lực trong {expiryMinutes} phút.</p>";
+
+        await _emailSender.SendEmailAsync(email, subject, body);
+    }
+
 }

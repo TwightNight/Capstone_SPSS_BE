@@ -13,7 +13,7 @@ namespace SPSS.Api.Controllers;
 
 [ApiController]
 [Route("api/users")]
-[Authorize(Roles = "Admin")]
+
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
@@ -26,6 +26,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(PagedResponse<UserDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUsersPaged([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {

@@ -32,21 +32,21 @@ public class TokenService : ITokenService
 		_configuration = configuration;
 		_unitOfWork = unitOfWork;
 		_mapper = mapper;
-		_accessTokenExpiration = TimeSpan.FromDays(double.Parse(_configuration["Jwt:AccessTokenExpirationDays"] ?? "30"));
-		_refreshTokenExpiration = TimeSpan.FromDays(double.Parse(_configuration["Jwt:RefreshTokenExpirationDays"] ?? "7"));
+		_accessTokenExpiration = TimeSpan.FromDays(double.Parse(_configuration["JwtSettings:AccessTokenExpirationDays"] ?? "30"));
+		_refreshTokenExpiration = TimeSpan.FromDays(double.Parse(_configuration["JwtSettings:RefreshTokenExpirationDays"] ?? "7"));
 	}
 
 	public string GenerateAccessToken(AuthUserDto user)
 	{
 		var claims = new List<Claim>
 		{
-			new Claim("Id", user.UserId.ToString()),
-			new Claim("UserName", user.UserName),
-			new Claim("Email", user.EmailAddress),
-			new Claim("Role", user.Role ?? string.Empty)
+			new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()), 
+			new Claim(ClaimTypes.Name, user.UserName),                    
+			new Claim(ClaimTypes.Email, user.EmailAddress),
+			new Claim(ClaimTypes.Role, user.Role ?? string.Empty)         
 		};
 
-		var jwtKey = _configuration["Jwt:Key"];
+		var jwtKey = _configuration["JwtSettings:Key"];
 		if (string.IsNullOrEmpty(jwtKey))
 			throw new InvalidOperationException(ExceptionMessageConstants.Token.JwtKeyNotConfigured);
 
@@ -55,8 +55,8 @@ public class TokenService : ITokenService
 		var expires = DateTime.UtcNow.Add(_accessTokenExpiration);
 
 		var token = new JwtSecurityToken(
-			issuer: _configuration["Jwt:Issuer"],
-			audience: _configuration["Jwt:Audience"],
+			issuer: _configuration["JwtSettings:Issuer"],
+			audience: _configuration["JwtSettings:Audience"],
 			claims: claims,
 			expires: expires,
 			signingCredentials: credentials
@@ -80,7 +80,7 @@ public class TokenService : ITokenService
 		try
 		{
 			var tokenHandler = new JwtSecurityTokenHandler();
-			var jwtKey = _configuration["Jwt:Key"];
+			var jwtKey = _configuration["JwtSettings:Key"];
 			if (string.IsNullOrEmpty(jwtKey))
 				throw new InvalidOperationException(ExceptionMessageConstants.Token.JwtKeyNotConfigured);
 
@@ -91,8 +91,8 @@ public class TokenService : ITokenService
 				IssuerSigningKey = new SymmetricSecurityKey(key),
 				ValidateIssuer = true,
 				ValidateAudience = true,
-				ValidIssuer = _configuration["Jwt:Issuer"],
-				ValidAudience = _configuration["Jwt:Audience"],
+				ValidIssuer = _configuration["JwtSettings:Issuer"],
+				ValidAudience = _configuration["JwtSettings:Audience"],
 				ClockSkew = TimeSpan.Zero
 			}, out SecurityToken validatedToken);
 
