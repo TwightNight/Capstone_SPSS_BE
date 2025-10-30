@@ -129,6 +129,7 @@ namespace SPSS.Service.Services.Implementations
 			if (request == null)
 				throw new ArgumentNullException(nameof(request));
 
+			// Kiểm tra trùng ngày nếu có truyền HolidayDate
 			var exists = await _holidayRepository.ExistsAsync(h =>
 				h.HolidayDate == request.HolidayDate &&
 				!h.IsDeleted);
@@ -161,7 +162,6 @@ namespace SPSS.Service.Services.Implementations
 			if (request.HolidayDate.HasValue)
 			{
 				var exists = await _holidayRepository.ExistsAsync(h =>
-					h.Id != id &&
 					h.HolidayDate == request.HolidayDate.Value &&
 					!h.IsDeleted);
 
