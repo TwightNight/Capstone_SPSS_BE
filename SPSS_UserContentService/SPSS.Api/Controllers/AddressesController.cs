@@ -2,9 +2,11 @@
 using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.Address;
 using SPSS.Service.Services.Interfaces;
+using SPSS.Shared.Errors;
 using SPSS.Shared.Responses;
 using System;
 using System.Collections.Generic;
+using System.Security;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -23,7 +25,7 @@ public class AddressesController : ControllerBase
     }
 
     [HttpGet]
-    [ProducesResponseType(typeof(PagedResponse<AddressDto>), 200)]
+    [ProducesResponseType(typeof(PagedResponse<AddressDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMyAddresses([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
         var userId = GetUserIdFromClaims();
@@ -32,8 +34,8 @@ public class AddressesController : ControllerBase
     }
 
     [HttpPost]
-    [ProducesResponseType(typeof(AddressDto), 201)]
-    [ProducesResponseType(400)]
+    [ProducesResponseType(typeof(AddressDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateAddress([FromBody] AddressForCreationDto createDto)
     {
         var userId = GetUserIdFromClaims();
@@ -42,60 +44,35 @@ public class AddressesController : ControllerBase
     }
 
     [HttpPut("{addressId:guid}")]
-    [ProducesResponseType(204)]
-    [ProducesResponseType(400)]
-    [ProducesResponseType(404)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateAddress(Guid addressId, [FromBody] AddressForUpdateDto updateDto)
     {
-        try
-        {
-            var userId = GetUserIdFromClaims();
-            await _addressService.UpdateAsync(addressId, updateDto, userId);
-            return NoContent();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
+        var userId = GetUserIdFromClaims();
+        await _addressService.UpdateAsync(addressId, updateDto, userId);
+        return NoContent();
     }
 
     [HttpDelete("{addressId:guid}")]
-    [ProducesResponseType(204)]
-    [ProducesResponseType(400)]
-    [ProducesResponseType(404)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status409Conflict)] // InvalidOperationException được map sang 409 Conflict
     public async Task<IActionResult> DeleteAddress(Guid addressId)
     {
-        try
-        {
-            var userId = GetUserIdFromClaims();
-            await _addressService.DeleteAsync(addressId, userId);
-            return NoContent();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var userId = GetUserIdFromClaims();
+        await _addressService.DeleteAsync(addressId, userId);
+        return NoContent();
     }
 
     [HttpPatch("{addressId:guid}/set-default")]
-    [ProducesResponseType(204)]
-    [ProducesResponseType(404)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SetDefaultAddress(Guid addressId)
     {
-        try
-        {
-            var userId = GetUserIdFromClaims();
-            await _addressService.SetAsDefaultAsync(addressId, userId);
-            return NoContent();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
+        var userId = GetUserIdFromClaims();
+        await _addressService.SetAsDefaultAsync(addressId, userId);
+        return NoContent();
     }
 
     private Guid GetUserIdFromClaims()
@@ -103,7 +80,8 @@ public class AddressesController : ControllerBase
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
         {
-            throw new InvalidOperationException("User identifier is missing or invalid in the token.");
+            // Ném SecurityException để middleware xử lý thành lỗi 401 Unauthorized.
+            throw new SecurityException("User identifier is missing or invalid in the security token.");
         }
         return userId;
     }

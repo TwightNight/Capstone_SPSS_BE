@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.SkinType;
 using SPSS.Service.Services.Interfaces;
+using SPSS.Shared.Errors;
 using SPSS.Shared.Responses;
 using System;
 using System.Collections.Generic;
@@ -35,85 +36,41 @@ public class SkinTypeController : ControllerBase
     [HttpGet("{id:guid}")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(SkinTypeWithDetailDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(Guid id)
     {
-        try
-        {
-            var skinType = await _skinTypeService.GetByIdAsync(id);
-            return Ok(skinType);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
+        var skinType = await _skinTypeService.GetByIdAsync(id);
+        return Ok(skinType);
     }
 
     [HttpPost]
     [ProducesResponseType(typeof(SkinTypeWithDetailDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Create([FromBody] SkinTypeForCreationDto dto)
     {
-        try
-        {
-            var createdDto = await _skinTypeService.CreateAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = createdDto.Id }, createdDto);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
+        var createdDto = await _skinTypeService.CreateAsync(dto);
+        return CreatedAtAction(nameof(GetById), new { id = createdDto.Id }, createdDto);
     }
 
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(SkinTypeWithDetailDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Update(Guid id, [FromBody] SkinTypeForUpdateDto dto)
     {
-        try
-        {
-            var updatedDto = await _skinTypeService.UpdateAsync(id, dto);
-            return Ok(updatedDto);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
+        var updatedDto = await _skinTypeService.UpdateAsync(id, dto);
+        return Ok(updatedDto);
     }
 
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status409Conflict)] // InvalidOperationException thường là lỗi conflict
     public async Task<IActionResult> Delete(Guid id)
     {
-        try
-        {
-            await _skinTypeService.DeleteAsync(id);
-            return NoContent();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        await _skinTypeService.DeleteAsync(id);
+        return NoContent();
     }
 }

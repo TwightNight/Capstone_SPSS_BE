@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.Reply;
-using SPSS.Service.Interfaces;
-using SPSS.Service.Services.Interfaces; // Đã sửa namespace
+using SPSS.Service.Services.Interfaces; 
+using SPSS.Shared.Errors;
 using System;
 using System.Security;
 using System.Security.Claims;
@@ -26,75 +26,44 @@ public class ReplyController : ControllerBase
 
     [HttpPost]
     [ProducesResponseType(typeof(ReplyDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateReply([FromBody] ReplyForCreationDto replyDto)
     {
-        try
-        {
-            var userId = GetUserIdFromClaims();
-            var createdReply = await _replyService.CreateAsync(userId, replyDto);
-            return CreatedAtAction(null, new { id = createdReply.Id }, createdReply);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var userId = GetUserIdFromClaims();
+        var createdReply = await _replyService.CreateAsync(userId, replyDto);
+        return CreatedAtAction(null, new { id = createdReply.Id }, createdReply);
     }
 
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(ReplyDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateReply(Guid id, [FromBody] ReplyForUpdateDto replyDto)
     {
-        try
-        {
-            var userId = GetUserIdFromClaims();
-            var updatedReply = await _replyService.UpdateAsync(userId, replyDto, id);
-            return Ok(updatedReply);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (SecurityException)
-        {
-            return Forbid();
-        }
+        var userId = GetUserIdFromClaims();
+        var updatedReply = await _replyService.UpdateAsync(userId, replyDto, id);
+        return Ok(updatedReply);
     }
 
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteReply(Guid id)
     {
-        try
-        {
-            var userId = GetUserIdFromClaims();
-            await _replyService.DeleteAsync(userId, id);
-            return NoContent();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (SecurityException)
-        {
-            return Forbid();
-        }
+        var userId = GetUserIdFromClaims();
+        await _replyService.DeleteAsync(userId, id);
+        return NoContent();
     }
 
     private Guid GetUserIdFromClaims()
     {
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
         if (string.IsNullOrWhiteSpace(userIdString) || !Guid.TryParse(userIdString, out var userId))
         {
             throw new SecurityException("User identifier is missing or invalid in the security token.");
         }
-
         return userId;
     }
 }

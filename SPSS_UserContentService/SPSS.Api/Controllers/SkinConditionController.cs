@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.SkinCondition;
 using SPSS.Service.Services.Interfaces;
+using SPSS.Shared.Errors;
 using SPSS.Shared.Responses;
 using System;
 using System.Collections.Generic;
@@ -37,89 +38,45 @@ public class SkinConditionController : ControllerBase
     [HttpGet("{id:guid}")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(SkinConditionDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(Guid id)
     {
-        try
-        {
-            var skinCondition = await _skinConditionService.GetByIdAsync(id);
-            return Ok(skinCondition);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
+        var skinCondition = await _skinConditionService.GetByIdAsync(id);
+        return Ok(skinCondition);
     }
 
     [HttpPost]
     [ProducesResponseType(typeof(SkinConditionDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Create([FromBody] SkinConditionForCreationDto dto)
     {
-        try
-        {
-            var userId = GetUserIdFromClaims();
-            var createdDto = await _skinConditionService.CreateAsync(dto, userId);
-            return CreatedAtAction(nameof(GetById), new { id = createdDto.Id }, createdDto);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
+        var userId = GetUserIdFromClaims();
+        var createdDto = await _skinConditionService.CreateAsync(dto, userId);
+        return CreatedAtAction(nameof(GetById), new { id = createdDto.Id }, createdDto);
     }
 
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(SkinConditionDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Update(Guid id, [FromBody] SkinConditionForUpdateDto dto)
     {
-        try
-        {
-            var userId = GetUserIdFromClaims();
-            var updatedDto = await _skinConditionService.UpdateAsync(id, dto, userId);
-            return Ok(updatedDto);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
+        var userId = GetUserIdFromClaims();
+        var updatedDto = await _skinConditionService.UpdateAsync(id, dto, userId);
+        return Ok(updatedDto);
     }
 
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status409Conflict)] // Hoặc 400 tùy vào ý nghĩa của InvalidOperationException
     public async Task<IActionResult> Delete(Guid id)
     {
-        try
-        {
-            var userId = GetUserIdFromClaims();
-            await _skinConditionService.DeleteAsync(id, userId);
-            return NoContent();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var userId = GetUserIdFromClaims();
+        await _skinConditionService.DeleteAsync(id, userId);
+        return NoContent();
     }
 
     private Guid GetUserIdFromClaims()

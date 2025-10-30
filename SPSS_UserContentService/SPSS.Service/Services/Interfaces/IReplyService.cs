@@ -5,13 +5,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SPSS.Service.Interfaces
+namespace SPSS.Service.Services.Interfaces;
+
+public interface IReplyService
 {
-    public interface IReplyService
-    {
-        Task<ReplyDto> CreateAsync(Guid userId, ReplyForCreationDto replyDto);
-        Task<ReplyDto> UpdateAsync(Guid userId, ReplyForUpdateDto replyDto, Guid id);
-        Task DeleteAsync(Guid userId, Guid id);
-    }
+    Task<ReplyDto> CreateAsync(Guid userId, ReplyForCreationDto replyDto);
+    Task<ReplyDto> UpdateAsync(Guid userId, ReplyForUpdateDto replyDto, Guid id);
+    Task DeleteAsync(Guid userId, Guid id);
 }
 
