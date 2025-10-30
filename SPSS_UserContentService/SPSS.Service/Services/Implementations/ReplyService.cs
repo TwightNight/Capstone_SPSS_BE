@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore; // Cần cho .Include()
-using SPSS.Service.Interfaces;
+using SPSS.Service.Services.Interfaces;
 using SPSS.BusinessObject.Dto.Reply;
 using SPSS.BusinessObject.Models;
 using SPSS.Repository.Repositories.Interfaces;
@@ -10,7 +10,7 @@ using System.Security; // Cần cho SecurityException
 using System;
 using System.Threading.Tasks;
 
-namespace SPSS.Service.Implementations
+namespace SPSS.Service.Services.Implementations
 {
     public class ReplyService : IReplyService
     {
