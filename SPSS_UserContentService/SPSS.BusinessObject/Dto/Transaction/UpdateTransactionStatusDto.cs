@@ -9,9 +9,12 @@ namespace SPSS.BusinessObject.Dto.Transaction;
 
 public class UpdateTransactionStatusDto
 {
-    [Required]
+    [Required(ErrorMessage = "Transaction ID is required.")]
     public Guid TransactionId { get; set; }
 
-    [Required]
+    [Required(ErrorMessage = "Status is required.")]
+    // Example: Enforce specific status types.
+    // Adjust these values to match your system's statuses (e.g., "Completed", "Pending", "Failed").
+    [RegularExpression("^(Success|Failed|Pending)$", ErrorMessage = "Status must be 'Success', 'Failed', or 'Pending'.")]
     public string Status { get; set; }
 }

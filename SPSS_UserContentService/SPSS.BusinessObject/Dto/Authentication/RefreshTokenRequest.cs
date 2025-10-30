@@ -4,6 +4,7 @@ namespace SPSS.BusinessObject.Dto.Authentication;
 
 public class RefreshTokenRequest
 {
-    [Required]
+    [Required(ErrorMessage = "Refresh token is required.")]
     public string RefreshToken { get; set; }
+
 }

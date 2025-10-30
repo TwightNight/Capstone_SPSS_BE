@@ -9,6 +9,8 @@ namespace SPSS.BusinessObject.Dto.Account;
 
 public class UpdateAvatarRequest
 {
-    [Required]
+    [Required(ErrorMessage = "Avatar URL is required.")]
+    [StringLength(500, ErrorMessage = "Avatar URL cannot exceed 500 characters.")]
+    [Url(ErrorMessage = "Invalid URL format.")]
     public string AvatarUrl { get; set; } = null!;
 }

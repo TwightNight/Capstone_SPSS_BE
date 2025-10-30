@@ -7,9 +7,9 @@ namespace SPSS.BusinessObject.Dto.Authentication;
 /// </summary>
 public class AssignRoleRequest
 {
-    [Required(ErrorMessage = "UserId là bắt buộc")]
+    [Required(ErrorMessage = "User ID is required.")]
     public string UserId { get; set; }
 
-    [Required(ErrorMessage = "RoleName là bắt buộc")]
+    [Required(ErrorMessage = "Role name is required.")]
     public string RoleName { get; set; }
 }
