@@ -2,9 +2,10 @@
 using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.Account;
 using SPSS.Service.Services.Interfaces;
-using SPSS.Shared.Errors;
 using SPSS.Shared.Exceptions;
+using SPSS.Shared.Responses;
 using System;
+using System.Linq;
 using System.Security;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -30,43 +31,40 @@ public class AccountController : ControllerBase
     {
         var userId = GetUserIdFromClaims();
         var accountInfo = await _userService.GetAccountInfoAsync(userId);
-        return Ok(accountInfo);
+        return Ok(ApiResponse.Ok(accountInfo, "Account information retrieved successfully."));
     }
 
     [HttpPut]
     public async Task<IActionResult> UpdateMyAccount([FromBody] AccountForUpdateDto dto)
     {
-		if (!ModelState.IsValid)
-		{
-
-			var errorMessages = ModelState.Values
-				.SelectMany(v => v.Errors)
-				.Select(e => e.ErrorMessage)
-				.ToList();
-
-			throw new ValidationException(string.Join(" | ", errorMessages));
-		}
-		var userId = GetUserIdFromClaims();
+        if (!ModelState.IsValid)
+        {
+            var errorMessages = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            throw new ValidationException(string.Join(" | ", errorMessages));
+        }
+        var userId = GetUserIdFromClaims();
         var updatedAccount = await _userService.UpdateAccountInfoAsync(userId, dto);
-        return Ok(updatedAccount);
+        return Ok(ApiResponse.Ok(updatedAccount, "Account updated successfully."));
     }
 
     [HttpPatch("avatar")]
     public async Task<IActionResult> UpdateMyAvatar([FromBody] UpdateAvatarRequest request)
     {
-		if (!ModelState.IsValid)
-		{
-
-			var errorMessages = ModelState.Values
-				.SelectMany(v => v.Errors)
-				.Select(e => e.ErrorMessage)
-				.ToList();
-
-			throw new ValidationException(string.Join(" | ", errorMessages));
-		}
-		var userId = GetUserIdFromClaims();
+        if (!ModelState.IsValid)
+        {
+            var errorMessages = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            throw new ValidationException(string.Join(" | ", errorMessages));
+        }
+        var userId = GetUserIdFromClaims();
         var oldAvatarUrl = await _userService.UpdateAvatarAsync(userId, request.AvatarUrl);
-        return Ok(new { oldAvatar = oldAvatarUrl, newAvatar = request.AvatarUrl });
+        var data = new { oldAvatar = oldAvatarUrl, newAvatar = request.AvatarUrl };
+        return Ok(ApiResponse.Ok(data, "Avatar updated successfully."));
     }
 
     private Guid GetUserIdFromClaims()
@@ -77,12 +75,5 @@ public class AccountController : ControllerBase
             throw new SecurityException("User identifier is missing or invalid in the security token.");
         }
         return userId;
-    }
-    [HttpGet("whoami")]
-    public IActionResult WhoAmI()
-    {
-        var isAuth = User.Identity?.IsAuthenticated;
-        var claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
-        return Ok(new { isAuth, claims });
     }
 }

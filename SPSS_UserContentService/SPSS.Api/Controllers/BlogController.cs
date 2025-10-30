@@ -2,11 +2,10 @@
 using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.Blog;
 using SPSS.Service.Services.Interfaces;
-using SPSS.Shared.Errors;
 using SPSS.Shared.Exceptions;
 using SPSS.Shared.Responses;
 using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Security;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -31,7 +30,7 @@ public class BlogController : ControllerBase
     public async Task<IActionResult> GetBlogs([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
         var response = await _blogService.GetPagedAsync(pageNumber, pageSize);
-        return Ok(response);
+        return Ok(ApiResponse.Ok(response, "Blogs retrieved successfully."));
     }
 
     [HttpGet("{id:guid}")]
@@ -39,45 +38,41 @@ public class BlogController : ControllerBase
     public async Task<IActionResult> GetBlogById(Guid id)
     {
         var blogDetail = await _blogService.GetByIdAsync(id);
-        return Ok(blogDetail);
+        return Ok(ApiResponse.Ok(blogDetail, "Blog retrieved successfully."));
     }
 
     [HttpPost]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CreateBlog([FromBody] BlogForCreationDto blogDto)
     {
-		if (!ModelState.IsValid)
-		{
-
-			var errorMessages = ModelState.Values
-				.SelectMany(v => v.Errors)
-				.Select(e => e.ErrorMessage)
-				.ToList();
-
-			throw new ValidationException(string.Join(" | ", errorMessages));
-		}
-		var userId = GetUserIdFromClaims();
+        if (!ModelState.IsValid)
+        {
+            var errorMessages = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            throw new ValidationException(string.Join(" | ", errorMessages));
+        }
+        var userId = GetUserIdFromClaims();
         var createdBlog = await _blogService.CreateBlogAsync(blogDto, userId);
-        return CreatedAtAction(nameof(GetBlogById), new { id = createdBlog.Id }, createdBlog);
+        return CreatedAtAction(nameof(GetBlogById), new { id = createdBlog.Id }, ApiResponse.Ok(createdBlog, "Blog created successfully."));
     }
 
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateBlog(Guid id, [FromBody] BlogForUpdateDto blogDto)
     {
-		if (!ModelState.IsValid)
-		{
-
-			var errorMessages = ModelState.Values
-				.SelectMany(v => v.Errors)
-				.Select(e => e.ErrorMessage)
-				.ToList();
-
-			throw new ValidationException(string.Join(" | ", errorMessages));
-		}
-		var userId = GetUserIdFromClaims();
+        if (!ModelState.IsValid)
+        {
+            var errorMessages = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            throw new ValidationException(string.Join(" | ", errorMessages));
+        }
+        var userId = GetUserIdFromClaims();
         var updatedBlog = await _blogService.UpdateBlogAsync(id, blogDto, userId);
-        return Ok(updatedBlog);
+        return Ok(ApiResponse.Ok(updatedBlog, "Blog updated successfully."));
     }
 
     [HttpDelete("{id:guid}")]
@@ -86,7 +81,7 @@ public class BlogController : ControllerBase
     {
         var userId = GetUserIdFromClaims();
         await _blogService.DeleteAsync(id, userId);
-        return NoContent();
+        return Ok(ApiResponse.Ok<object>(null, "Blog deleted successfully."));
     }
 
     private Guid GetUserIdFromClaims()

@@ -2,11 +2,10 @@
 using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.SkinCondition;
 using SPSS.Service.Services.Interfaces;
-using SPSS.Shared.Errors;
 using SPSS.Shared.Exceptions;
 using SPSS.Shared.Responses;
 using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Security;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -32,7 +31,7 @@ public class SkinConditionController : ControllerBase
     public async Task<IActionResult> GetPaged([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
         var response = await _skinConditionService.GetPagedAsync(pageNumber, pageSize);
-        return Ok(response);
+        return Ok(ApiResponse.Ok(response, "Skin conditions retrieved successfully."));
     }
 
     [HttpGet("{id:guid}")]
@@ -40,43 +39,39 @@ public class SkinConditionController : ControllerBase
     public async Task<IActionResult> GetById(Guid id)
     {
         var skinCondition = await _skinConditionService.GetByIdAsync(id);
-        return Ok(skinCondition);
+        return Ok(ApiResponse.Ok(skinCondition, "Skin condition retrieved successfully."));
     }
 
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] SkinConditionForCreationDto dto)
     {
-		if (!ModelState.IsValid)
-		{
-
-			var errorMessages = ModelState.Values
-				.SelectMany(v => v.Errors)
-				.Select(e => e.ErrorMessage)
-				.ToList();
-
-			throw new ValidationException(string.Join(" | ", errorMessages));
-		}
-		var userId = GetUserIdFromClaims();
+        if (!ModelState.IsValid)
+        {
+            var errorMessages = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            throw new ValidationException(string.Join(" | ", errorMessages));
+        }
+        var userId = GetUserIdFromClaims();
         var createdDto = await _skinConditionService.CreateAsync(dto, userId);
-        return CreatedAtAction(nameof(GetById), new { id = createdDto.Id }, createdDto);
+        return CreatedAtAction(nameof(GetById), new { id = createdDto.Id }, ApiResponse.Ok(createdDto, "Skin condition created successfully."));
     }
 
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] SkinConditionForUpdateDto dto)
     {
-		if (!ModelState.IsValid)
-		{
-
-			var errorMessages = ModelState.Values
-				.SelectMany(v => v.Errors)
-				.Select(e => e.ErrorMessage)
-				.ToList();
-
-			throw new ValidationException(string.Join(" | ", errorMessages));
-		}
-		var userId = GetUserIdFromClaims();
+        if (!ModelState.IsValid)
+        {
+            var errorMessages = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            throw new ValidationException(string.Join(" | ", errorMessages));
+        }
+        var userId = GetUserIdFromClaims();
         var updatedDto = await _skinConditionService.UpdateAsync(id, dto, userId);
-        return Ok(updatedDto);
+        return Ok(ApiResponse.Ok(updatedDto, "Skin condition updated successfully."));
     }
 
     [HttpDelete("{id:guid}")]
@@ -84,7 +79,7 @@ public class SkinConditionController : ControllerBase
     {
         var userId = GetUserIdFromClaims();
         await _skinConditionService.DeleteAsync(id, userId);
-        return NoContent();
+        return Ok(ApiResponse.Ok<object>(null, "Skin condition deleted successfully."));
     }
 
     private Guid GetUserIdFromClaims()
