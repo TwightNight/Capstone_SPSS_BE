@@ -28,8 +28,6 @@ public class AuthenticationController : ControllerBase
 
     [HttpPost("login")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         if (!ModelState.IsValid)
@@ -48,24 +46,37 @@ public class AuthenticationController : ControllerBase
 
     [HttpPost("register")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(object), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
-        var user = await _authService.RegisterAsync(request);
+		if (!ModelState.IsValid)
+		{
+
+			var errorMessages = ModelState.Values
+				.SelectMany(v => v.Errors)
+				.Select(e => e.ErrorMessage)
+				.ToList();
+
+			throw new ValidationException(string.Join(" | ", errorMessages));
+		}
+		var user = await _authService.RegisterAsync(request);
         return StatusCode(StatusCodes.Status201Created, new { user });
     }
 
     [HttpPost("register-privileged")]
     [Authorize(Roles = "Admin,Manager")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> RegisterPrivilegedUser([FromBody] PrivilegedRegisterRequest request)
     {
-        var user = new AuthUserDto();
+		if (!ModelState.IsValid)
+		{
+
+			var errorMessages = ModelState.Values
+				.SelectMany(v => v.Errors)
+				.Select(e => e.ErrorMessage)
+				.ToList();
+
+			throw new ValidationException(string.Join(" | ", errorMessages));
+		}
+		var user = new AuthUserDto();
         switch (request.RoleName)
         {
             case "Manager":
@@ -87,42 +98,63 @@ public class AuthenticationController : ControllerBase
     }
 
     [HttpPost("change-password")]
-    [Authorize]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
+    [AllowAnonymous]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {
-        var userId = GetUserIdFromClaims();
+		if (!ModelState.IsValid)
+		{
+
+			var errorMessages = ModelState.Values
+				.SelectMany(v => v.Errors)
+				.Select(e => e.ErrorMessage)
+				.ToList();
+
+			throw new ValidationException(string.Join(" | ", errorMessages));
+		}
+		var userId = GetUserIdFromClaims();
         await _authService.ChangePasswordAsync(userId, request.CurrentPassword, request.NewPassword);
         return NoContent();
     }
 
     [HttpPost("refresh-token")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
     {
-        var expiredAccessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+		if (!ModelState.IsValid)
+		{
+
+			var errorMessages = ModelState.Values
+				.SelectMany(v => v.Errors)
+				.Select(e => e.ErrorMessage)
+				.ToList();
+
+			throw new ValidationException(string.Join(" | ", errorMessages));
+		}
+		var expiredAccessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
         var response = await _authService.RefreshTokenAsync(expiredAccessToken, request.RefreshToken);
         return Ok(response);
     }
 
     [HttpPost("logout")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
     {
-        await _authService.LogoutAsync(request.RefreshToken);
+		if (!ModelState.IsValid)
+		{
+
+			var errorMessages = ModelState.Values
+				.SelectMany(v => v.Errors)
+				.Select(e => e.ErrorMessage)
+				.ToList();
+
+			throw new ValidationException(string.Join(" | ", errorMessages));
+		}
+		await _authService.LogoutAsync(request.RefreshToken);
         return NoContent();
     }
 
     [HttpPost("assign-role")]
     [Authorize(Roles = "Admin")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> AssignRole([FromBody] AssignRoleRequest request)
     {
         await _authService.AssignRoleToUser(request.UserId, request.RoleName);
@@ -143,7 +175,17 @@ public class AuthenticationController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> VerifyAccount([FromBody] VerifyOtpRequest request)
     {
-        await _authService.VerifyAccountByOtpAsync(request.Email, request.Code);
+		if (!ModelState.IsValid)
+		{
+
+			var errorMessages = ModelState.Values
+				.SelectMany(v => v.Errors)
+				.Select(e => e.ErrorMessage)
+				.ToList();
+
+			throw new ValidationException(string.Join(" | ", errorMessages));
+		}
+		await _authService.VerifyAccountByOtpAsync(request.Email, request.Code);
         return NoContent();
     }
 
@@ -152,7 +194,17 @@ public class AuthenticationController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> ResendOtp([FromBody] ResendOtpRequest request)
     {
-        await _authService.ResendVerificationOtpAsync(request.Email);
+		if (!ModelState.IsValid)
+		{
+
+			var errorMessages = ModelState.Values
+				.SelectMany(v => v.Errors)
+				.Select(e => e.ErrorMessage)
+				.ToList();
+
+			throw new ValidationException(string.Join(" | ", errorMessages));
+		}
+		await _authService.ResendVerificationOtpAsync(request.Email);
         return NoContent();
     }
 

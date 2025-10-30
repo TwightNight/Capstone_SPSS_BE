@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.Reply;
 using SPSS.Service.Services.Interfaces; 
 using SPSS.Shared.Errors;
+using SPSS.Shared.Exceptions;
 using System;
 using System.Security;
 using System.Security.Claims;
@@ -25,31 +26,42 @@ public class ReplyController : ControllerBase
     }
 
     [HttpPost]
-    [ProducesResponseType(typeof(ReplyDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateReply([FromBody] ReplyForCreationDto replyDto)
     {
-        var userId = GetUserIdFromClaims();
+		if (!ModelState.IsValid)
+		{
+
+			var errorMessages = ModelState.Values
+				.SelectMany(v => v.Errors)
+				.Select(e => e.ErrorMessage)
+				.ToList();
+
+			throw new ValidationException(string.Join(" | ", errorMessages));
+		}
+		var userId = GetUserIdFromClaims();
         var createdReply = await _replyService.CreateAsync(userId, replyDto);
         return CreatedAtAction(null, new { id = createdReply.Id }, createdReply);
     }
 
     [HttpPut("{id:guid}")]
-    [ProducesResponseType(typeof(ReplyDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateReply(Guid id, [FromBody] ReplyForUpdateDto replyDto)
     {
-        var userId = GetUserIdFromClaims();
+		if (!ModelState.IsValid)
+		{
+
+			var errorMessages = ModelState.Values
+				.SelectMany(v => v.Errors)
+				.Select(e => e.ErrorMessage)
+				.ToList();
+
+			throw new ValidationException(string.Join(" | ", errorMessages));
+		}
+		var userId = GetUserIdFromClaims();
         var updatedReply = await _replyService.UpdateAsync(userId, replyDto, id);
         return Ok(updatedReply);
     }
 
     [HttpDelete("{id:guid}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteReply(Guid id)
     {
         var userId = GetUserIdFromClaims();

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.Account;
 using SPSS.Service.Services.Interfaces;
 using SPSS.Shared.Errors;
+using SPSS.Shared.Exceptions;
 using System;
 using System.Security;
 using System.Security.Claims;
@@ -25,8 +26,6 @@ public class AccountController : ControllerBase
     }
 
     [HttpGet]
-    [ProducesResponseType(typeof(AccountDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetMyAccount()
     {
         var userId = GetUserIdFromClaims();
@@ -35,24 +34,37 @@ public class AccountController : ControllerBase
     }
 
     [HttpPut]
-    [ProducesResponseType(typeof(AccountDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateMyAccount([FromBody] AccountForUpdateDto dto)
     {
-        var userId = GetUserIdFromClaims();
+		if (!ModelState.IsValid)
+		{
+
+			var errorMessages = ModelState.Values
+				.SelectMany(v => v.Errors)
+				.Select(e => e.ErrorMessage)
+				.ToList();
+
+			throw new ValidationException(string.Join(" | ", errorMessages));
+		}
+		var userId = GetUserIdFromClaims();
         var updatedAccount = await _userService.UpdateAccountInfoAsync(userId, dto);
         return Ok(updatedAccount);
     }
 
     [HttpPatch("avatar")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateMyAvatar([FromBody] UpdateAvatarRequest request)
     {
-        var userId = GetUserIdFromClaims();
+		if (!ModelState.IsValid)
+		{
+
+			var errorMessages = ModelState.Values
+				.SelectMany(v => v.Errors)
+				.Select(e => e.ErrorMessage)
+				.ToList();
+
+			throw new ValidationException(string.Join(" | ", errorMessages));
+		}
+		var userId = GetUserIdFromClaims();
         var oldAvatarUrl = await _userService.UpdateAvatarAsync(userId, request.AvatarUrl);
         return Ok(new { oldAvatar = oldAvatarUrl, newAvatar = request.AvatarUrl });
     }
@@ -67,7 +79,6 @@ public class AccountController : ControllerBase
         return userId;
     }
     [HttpGet("whoami")]
-    [Authorize(Roles = "Admin")]
     public IActionResult WhoAmI()
     {
         var isAuth = User.Identity?.IsAuthenticated;

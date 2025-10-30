@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.Role;
 using SPSS.Service.Services.Interfaces;
 using SPSS.Shared.Errors;
+using SPSS.Shared.Exceptions;
 using SPSS.Shared.Responses;
 using System;
 using System.Collections.Generic;
@@ -42,8 +43,6 @@ public class RoleController : ControllerBase
     }
 
     [HttpGet("name/{roleName}")]
-    [ProducesResponseType(typeof(RoleDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetRoleByName(string roleName)
     {
         var role = await _roleService.GetByNameAsync(roleName);
@@ -51,30 +50,40 @@ public class RoleController : ControllerBase
     }
 
     [HttpPost]
-    [ProducesResponseType(typeof(RoleDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> CreateRole([FromBody] RoleForCreationDto roleDto)
+	public async Task<IActionResult> CreateRole([FromBody] RoleForCreationDto roleDto)
     {
-        var createdRole = await _roleService.CreateAsync(roleDto);
+		if (!ModelState.IsValid)
+		{
+
+			var errorMessages = ModelState.Values
+				.SelectMany(v => v.Errors)
+				.Select(e => e.ErrorMessage)
+				.ToList();
+
+			throw new ValidationException(string.Join(" | ", errorMessages));
+		}
+		var createdRole = await _roleService.CreateAsync(roleDto);
         return CreatedAtAction(nameof(GetRoleById), new { id = createdRole.RoleId }, createdRole);
     }
 
     [HttpPut("{id:guid}")]
-    [ProducesResponseType(typeof(RoleDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateRole(Guid id, [FromBody] RoleForUpdateDto roleDto)
     {
-        var updatedRole = await _roleService.UpdateAsync(id, roleDto);
+		if (!ModelState.IsValid)
+		{
+
+			var errorMessages = ModelState.Values
+				.SelectMany(v => v.Errors)
+				.Select(e => e.ErrorMessage)
+				.ToList();
+
+			throw new ValidationException(string.Join(" | ", errorMessages));
+		}
+		var updatedRole = await _roleService.UpdateAsync(id, roleDto);
         return Ok(updatedRole);
     }
 
     [HttpDelete("{id:guid}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status400BadRequest)]  
     public async Task<IActionResult> DeleteRole(Guid id)
     {
         await _roleService.DeleteAsync(id);

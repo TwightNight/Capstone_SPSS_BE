@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.User;
 using SPSS.Service.Services.Interfaces;
 using SPSS.Shared.Errors;
+using SPSS.Shared.Exceptions;
 using SPSS.Shared.Responses;
 using System;
 using System.Security;
@@ -27,7 +28,6 @@ public class UsersController : ControllerBase
 
     [HttpGet]
     [Authorize(Roles = "Admin")]
-    [ProducesResponseType(typeof(PagedResponse<UserDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUsersPaged([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
         var response = await _userService.GetPagedAsync(pageNumber, pageSize);
@@ -35,40 +35,52 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetUserById(Guid id)
+	[Authorize]
+	public async Task<IActionResult> GetUserById(Guid id)
     {
         var user = await _userService.GetByIdAsync(id);
         return Ok(user);
     }
 
     [HttpPost]
-    [ProducesResponseType(typeof(UserDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> CreateUser([FromBody] UserForCreationDto dto)
+	[Authorize(Roles = "Admin")]
+	public async Task<IActionResult> CreateUser([FromBody] UserForCreationDto dto)
     {
-        var createdUser = await _userService.CreateAsync(dto);
+		if (!ModelState.IsValid)
+		{
+
+			var errorMessages = ModelState.Values
+				.SelectMany(v => v.Errors)
+				.Select(e => e.ErrorMessage)
+				.ToList();
+
+			throw new ValidationException(string.Join(" | ", errorMessages));
+		}
+		var createdUser = await _userService.CreateAsync(dto);
         return CreatedAtAction(nameof(GetUserById), new { id = createdUser.UserId }, createdUser);
     }
 
     [HttpPut("{id:guid}")]
-    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UserForUpdateDto dto)
+	[Authorize]
+	public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UserForUpdateDto dto)
     {
-        var updatedUser = await _userService.UpdateAsync(id, dto);
+		if (!ModelState.IsValid)
+		{
+
+			var errorMessages = ModelState.Values
+				.SelectMany(v => v.Errors)
+				.Select(e => e.ErrorMessage)
+				.ToList();
+
+			throw new ValidationException(string.Join(" | ", errorMessages));
+		}
+		var updatedUser = await _userService.UpdateAsync(id, dto);
         return Ok(updatedUser);
     }
 
     [HttpDelete("{id:guid}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status409Conflict)] // Nếu không thể xóa user vì lý do nghiệp vụ
-    public async Task<IActionResult> DeleteUser(Guid id)
+	[Authorize(Roles = "Admin")]
+	public async Task<IActionResult> DeleteUser(Guid id)
     {
         await _userService.DeleteAsync(id);
         return NoContent();

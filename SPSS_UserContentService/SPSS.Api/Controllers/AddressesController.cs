@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.Address;
 using SPSS.Service.Services.Interfaces;
 using SPSS.Shared.Errors;
+using SPSS.Shared.Exceptions;
 using SPSS.Shared.Responses;
 using System;
 using System.Collections.Generic;
@@ -25,7 +26,6 @@ public class AddressesController : ControllerBase
     }
 
     [HttpGet]
-    [ProducesResponseType(typeof(PagedResponse<AddressDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMyAddresses([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
         var userId = GetUserIdFromClaims();
@@ -34,46 +34,57 @@ public class AddressesController : ControllerBase
     }
 
     [HttpPost]
-    [ProducesResponseType(typeof(AddressDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateAddress([FromBody] AddressForCreationDto createDto)
     {
-        var userId = GetUserIdFromClaims();
+		if (!ModelState.IsValid)
+		{
+
+			var errorMessages = ModelState.Values
+				.SelectMany(v => v.Errors)
+				.Select(e => e.ErrorMessage)
+				.ToList();
+
+			throw new ValidationException(string.Join(" | ", errorMessages));
+		}
+		var userId = GetUserIdFromClaims();
         var createdAddress = await _addressService.CreateAsync(createDto, userId);
         return CreatedAtAction(nameof(GetMyAddresses), new { id = createdAddress.Id }, createdAddress);
     }
 
     [HttpPut("{addressId:guid}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateAddress(Guid addressId, [FromBody] AddressForUpdateDto updateDto)
     {
-        var userId = GetUserIdFromClaims();
+		if (!ModelState.IsValid)
+		{
+
+			var errorMessages = ModelState.Values
+				.SelectMany(v => v.Errors)
+				.Select(e => e.ErrorMessage)
+				.ToList();
+
+			throw new ValidationException(string.Join(" | ", errorMessages));
+		}
+		var userId = GetUserIdFromClaims();
         await _addressService.UpdateAsync(addressId, updateDto, userId);
         return NoContent();
     }
 
     [HttpDelete("{addressId:guid}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status409Conflict)] // InvalidOperationException được map sang 409 Conflict
-    public async Task<IActionResult> DeleteAddress(Guid addressId)
+    [Authorize(Roles = "Admin")]
+	public async Task<IActionResult> DeleteAddress(Guid addressId)
     {
         var userId = GetUserIdFromClaims();
         await _addressService.DeleteAsync(addressId, userId);
         return NoContent();
     }
 
-    [HttpPatch("{addressId:guid}/set-default")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> SetDefaultAddress(Guid addressId)
-    {
-        var userId = GetUserIdFromClaims();
-        await _addressService.SetAsDefaultAsync(addressId, userId);
-        return NoContent();
-    }
+    //[HttpPatch("{addressId:guid}/set-default")]
+    //public async Task<IActionResult> SetDefaultAddress(Guid addressId)
+    //{
+    //    var userId = GetUserIdFromClaims();
+    //    await _addressService.SetAsDefaultAsync(addressId, userId);
+    //    return NoContent();
+    //}
 
     private Guid GetUserIdFromClaims()
     {
