@@ -1,187 +1,178 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using SPSS.BusinessObject.Dto.Authentication;
 using SPSS.BusinessObject.Dto.Role;
 using SPSS.BusinessObject.Dto.User;
+using SPSS.BusinessObject.Dto.VerifyOtp;
 using SPSS.BusinessObject.Models;
 using SPSS.Repository.Repositories.Interfaces;
 using SPSS.Repository.UnitOfWork.Interfaces;
 using SPSS.Service.Services.Interfaces;
-using SPSS.Shared.Helpers;
 using SPSS.Shared.Constants;
+using SPSS.Shared.Helpers;
+using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
-using Microsoft.Extensions.Configuration;
-using SPSS.BusinessObject.Dto.VerifyOtp;
 
 namespace SPSS.Service.Services.Implementations;
 
 public class AuthenticationService : IAuthenticationService
 {
-	private readonly IUnitOfWork _unitOfWork;
-	private readonly ITokenService _tokenService;
-	private readonly IMapper _mapper;
-	private readonly IUserService _userService;
-	private readonly IRoleService _roleService;
-	private readonly IPasswordHasher _passwordHasher;
-	private readonly IConfiguration _configuration;
-	private readonly EmailSender _emailSender;
-	public AuthenticationService(IConfiguration configuration, EmailSender emailSender, IRoleService roleService, IUserService userService, IUnitOfWork unitOfWork, ITokenService tokenService, IMapper mapper, IPasswordHasher passwordHasher)
-	{
-		_configuration = configuration;
-		_emailSender = emailSender;
-		_unitOfWork = unitOfWork;
-		_tokenService = tokenService;
-		_mapper = mapper;
-		_userService = userService;
-		_roleService = roleService;
-		_passwordHasher = passwordHasher;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ITokenService _tokenService;
+    private readonly IMapper _mapper;
+    private readonly IUserService _userService;
+    private readonly IRoleService _roleService;
+    private readonly IPasswordHasher _passwordHasher;
+    private readonly IConfiguration _configuration;
+    private readonly EmailSender _emailSender;
+    public AuthenticationService(IConfiguration configuration, EmailSender emailSender, IRoleService roleService, IUserService userService, IUnitOfWork unitOfWork, ITokenService tokenService, IMapper mapper, IPasswordHasher passwordHasher)
+    {
+        _configuration = configuration;
+        _emailSender = emailSender;
+        _unitOfWork = unitOfWork;
+        _tokenService = tokenService;
+        _mapper = mapper;
+        _userService = userService;
+        _roleService = roleService;
+        _passwordHasher = passwordHasher;
     }
 
     public AuthenticationService(IRoleService roleService, IUserService userService, IUnitOfWork unitOfWork, ITokenService tokenService, IMapper mapper, IPasswordHasher passwordHasher)
-	{
-		_unitOfWork = unitOfWork;
-		_tokenService = tokenService;
-		_mapper = mapper;
-		_userService = userService;
-		_roleService = roleService;
-		_passwordHasher = passwordHasher;
-	}
+    {
+        _unitOfWork = unitOfWork;
+        _tokenService = tokenService;
+        _mapper = mapper;
+        _userService = userService;
+        _roleService = roleService;
+        _passwordHasher = passwordHasher;
+    }
 
-	public async Task<AuthenticationResponse> LoginAsync(LoginRequest loginRequest)
-	{
-		var usernameOrEmail = loginRequest.UsernameOrEmail;
+    public async Task<AuthenticationResponse> LoginAsync(LoginRequest loginRequest)
+    {
+        var usernameOrEmail = loginRequest.UsernameOrEmail;
 
-		var user = await _unitOfWork.GetRepository<IUserRepository>().Entities
-			.Include(u => u.Role)
-			.FirstOrDefaultAsync(u => u.EmailAddress == usernameOrEmail || u.UserName == usernameOrEmail);
+        var user = await _unitOfWork.GetRepository<IUserRepository>().Entities
+            .Include(u => u.Role)
+            .FirstOrDefaultAsync(u => u.EmailAddress == usernameOrEmail || u.UserName == usernameOrEmail);
 
-		if (user == null || user.IsDeleted)
-			throw new UnauthorizedAccessException(ExceptionMessageConstants.Authentication.InvalidCredentials);
+        if (user == null || user.IsDeleted)
+            throw new UnauthorizedAccessException(ExceptionMessageConstants.Authentication.InvalidCredentials);
 
-		if (!_passwordHasher.Verify(loginRequest.Password, user.Password))
-			throw new UnauthorizedAccessException(ExceptionMessageConstants.Authentication.InvalidCredentials);
+        if (!_passwordHasher.Verify(loginRequest.Password, user.Password))
+            throw new UnauthorizedAccessException(ExceptionMessageConstants.Authentication.InvalidCredentials);
 
-		var authUserDto = _mapper.Map<AuthUserDto>(user);
+        var authUserDto = _mapper.Map<AuthUserDto>(user);
 
-		var accessToken = _tokenService.GenerateAccessToken(authUserDto);
-		var refreshToken = _tokenService.GenerateRefreshToken();
+        var accessToken = _tokenService.GenerateAccessToken(authUserDto);
+        var refreshToken = _tokenService.GenerateRefreshToken();
 
-		var refreshTokenEntity = new RefreshToken
-		{
-			Token = refreshToken,
-			UserId = user.UserId,
-			ExpiryTime = DateTime.UtcNow.AddDays(7),
-			Created = DateTime.UtcNow,
-			IsRevoked = false,
-			IsUsed = false
-		};
+        var refreshTokenEntity = new RefreshToken
+        {
+            Token = refreshToken,
+            UserId = user.UserId,
+            ExpiryTime = DateTime.UtcNow.AddDays(7),
+            Created = DateTime.UtcNow,
+            IsRevoked = false,
+            IsUsed = false
+        };
 
-		_unitOfWork.GetRepository<IRefreshTokenRepository>().Add(refreshTokenEntity);
-		await _unitOfWork.SaveChangesAsync();
+        _unitOfWork.GetRepository<IRefreshTokenRepository>().Add(refreshTokenEntity);
+        await _unitOfWork.SaveChangesAsync();
 
-		return new AuthenticationResponse
-		{
-			AccessToken = accessToken,
-			RefreshToken = refreshToken,
-			AuthUserDto = authUserDto
-		};
-	}
+        return new AuthenticationResponse
+        {
+            AccessToken = accessToken,
+            RefreshToken = refreshToken,
+            AuthUserDto = authUserDto
+        };
+    }
 
-	public async Task<AuthenticationResponse> RefreshTokenAsync(string accessToken, string refreshToken)
-	{
-		var (newAccessToken, newRefreshToken, authUserDto) = await _tokenService.RefreshTokenAsync(accessToken, refreshToken);
+    public async Task<AuthenticationResponse> RefreshTokenAsync(string accessToken, string refreshToken)
+    {
+        var (newAccessToken, newRefreshToken, authUserDto) = await _tokenService.RefreshTokenAsync(accessToken, refreshToken);
 
-		return new AuthenticationResponse
-		{
-			AccessToken = newAccessToken,
-			RefreshToken = newRefreshToken,
-			AuthUserDto = authUserDto
-		};
-	}
+        return new AuthenticationResponse
+        {
+            AccessToken = newAccessToken,
+            RefreshToken = newRefreshToken,
+            AuthUserDto = authUserDto
+        };
+    }
 
-	public async Task ChangePasswordAsync(Guid userId, string currentPassword, string newPassword)
-	{
-		if (string.IsNullOrWhiteSpace(newPassword) || !IsValidPassword(newPassword))
-		{
-			throw new ArgumentException(ExceptionMessageConstants.Authentication.InvalidPasswordFormat);
-			
-		}
+    public async Task ChangePasswordAsync(Guid userId, string currentPassword, string newPassword)
+    {
+        if (string.IsNullOrWhiteSpace(newPassword) || !IsValidPassword(newPassword))
+        {
+            throw new ArgumentException(ExceptionMessageConstants.Authentication.InvalidPasswordFormat);
+        }
 
-		var user = await _unitOfWork.GetRepository<IUserRepository>().GetByIdAsync(userId);
-		if (user == null || user.IsDeleted)
-		{
-			throw new KeyNotFoundException(string.Format(ExceptionMessageConstants.User.NotFound, userId));
-		}
+        var user = await _unitOfWork.GetRepository<IUserRepository>().GetByIdAsync(userId);
+        if (user == null || user.IsDeleted)
+        {
+            throw new KeyNotFoundException(string.Format(ExceptionMessageConstants.User.NotFound, userId));
+        }
 
-		if (!_passwordHasher.Verify(currentPassword, user.Password))
-		{
-			throw new UnauthorizedAccessException(ExceptionMessageConstants.Authentication.CurrentPasswordIncorrect);
-		}
+        if (!_passwordHasher.Verify(currentPassword, user.Password))
+        {
+            throw new UnauthorizedAccessException(ExceptionMessageConstants.Authentication.CurrentPasswordIncorrect);
+        }
 
-		user.Password = _passwordHasher.Hash(newPassword);
-		user.LastUpdatedTime = DateTimeOffset.UtcNow;
-		user.LastUpdatedBy = userId.ToString();
+        user.Password = _passwordHasher.Hash(newPassword);
+        user.LastUpdatedTime = DateTimeOffset.UtcNow;
+        user.LastUpdatedBy = userId.ToString();
 
-		_unitOfWork.GetRepository<IUserRepository>().Update(user);
-		await _unitOfWork.SaveChangesAsync();
-	}
+        _unitOfWork.GetRepository<IUserRepository>().Update(user);
+        await _unitOfWork.SaveChangesAsync();
+    }
 
-	public async Task LogoutAsync(string refreshToken)
-	{
-		await _tokenService.RevokeRefreshTokenAsync(refreshToken);
-	}
+    public async Task LogoutAsync(string refreshToken)
+    {
+        await _tokenService.RevokeRefreshTokenAsync(refreshToken);
+    }
 
-	public async Task<AuthUserDto> RegisterAsync(RegisterRequest registerRequest)
-	{
-		return await RegisterUserInternalAsync(registerRequest, "Customer");
-	}
+    public async Task<AuthUserDto> RegisterAsync(RegisterRequest registerRequest)
+    {
+        return await RegisterUserInternalAsync(registerRequest, "Customer");
+    }
 
-	public async Task<AuthUserDto> RegisterForManagerAsync(RegisterRequest registerRequest)
-	{
-		return await RegisterUserInternalAsync(registerRequest, "Manager");
-	}
+    public async Task<AuthUserDto> RegisterPrivilegedUserAsync(PrivilegedRegisterRequest registerRequest)
+    {
+        return await RegisterUserInternalAsync(registerRequest, registerRequest.RoleName);
+    }
 
-	public async Task<AuthUserDto> RegisterForStaffAsync(RegisterRequest registerRequest)
-	{
-		return await RegisterUserInternalAsync(registerRequest, "Staff");
-	}
+    private async Task<AuthUserDto> RegisterUserInternalAsync(RegisterRequest registerRequest, string roleName)
+    {
+        if (await _userService.CheckUserNameExistsAsync(registerRequest.UserName))
+            throw new InvalidOperationException(string.Format(ExceptionMessageConstants.Authentication.UsernameTaken, registerRequest.UserName));
 
-	private async Task<AuthUserDto> RegisterUserInternalAsync(RegisterRequest registerRequest, string roleName)
-	{
-		if (await _userService.CheckUserNameExistsAsync(registerRequest.UserName))
-			throw new InvalidOperationException(string.Format(ExceptionMessageConstants.Authentication.UsernameTaken, registerRequest.UserName));
+        if (await _userService.CheckEmailExistsAsync(registerRequest.EmailAddress))
+            throw new InvalidOperationException(string.Format(ExceptionMessageConstants.Authentication.EmailTaken, registerRequest.EmailAddress));
 
-		if (await _userService.CheckEmailExistsAsync(registerRequest.EmailAddress))
-			throw new InvalidOperationException(string.Format(ExceptionMessageConstants.Authentication.EmailTaken, registerRequest.EmailAddress));
+        if (string.IsNullOrWhiteSpace(registerRequest.Password) || !IsValidPassword(registerRequest.Password))
+        {
+            throw new ArgumentException(ExceptionMessageConstants.Authentication.InvalidPasswordFormat);
+        }
 
-		if (string.IsNullOrWhiteSpace(registerRequest.Password) || !IsValidPassword(registerRequest.Password))
-		{
-			throw new ArgumentException(ExceptionMessageConstants.Authentication.InvalidPasswordFormat);
-		}
+        var userForCreationDto = _mapper.Map<UserForCreationDto>(registerRequest);
 
-		var userForCreationDto = _mapper.Map<UserForCreationDto>(registerRequest);
+        userForCreationDto.Password = _passwordHasher.Hash(registerRequest.Password);
+        userForCreationDto.Status = "Active";
 
-		userForCreationDto.Password = _passwordHasher.Hash(registerRequest.Password);
-		userForCreationDto.Status = "Active";
+        UserDto? createdUser = null;
 
-		UserDto? createdUser = null;
-
-        await _unitOfWork.BeginTransactionAsync(); // Bắt đầu Transaction
+        await _unitOfWork.BeginTransactionAsync();
         try
         {
-            // 1. Tạo user
             createdUser = await _userService.CreateAsync(userForCreationDto);
             if (createdUser == null)
             {
-                // Nếu service CreateAsync trả về null (có thể do lỗi), rollback ngay
                 throw new ApplicationException(ExceptionMessageConstants.Authentication.RegistrationFailed);
             }
 
-            // 2. Gán vai trò (Role)
             await AssignRoleToUser(createdUser.UserId.ToString(), roleName);
 
-            // 3. Commit
-            await _unitOfWork.CommitTransactionAsync(); // Cả 2 thành công
+            await _unitOfWork.CommitTransactionAsync();
             await SendVerificationOtpAsync(createdUser.UserId, createdUser.EmailAddress);
 
             var mapItem = _mapper.Map<AuthUserDto>(createdUser);
@@ -190,41 +181,41 @@ public class AuthenticationService : IAuthenticationService
         }
         catch (Exception ex)
         {
-            await _unitOfWork.RollbackTransactionAsync(); 
+            await _unitOfWork.RollbackTransactionAsync();
             throw new ApplicationException(string.Format(ExceptionMessageConstants.Authentication.RegistrationFailed, ex.Message), ex);
         }
     }
 
-	public async Task AssignRoleToUser(string userId, string roleName)
-	{
-		var userGuid = Guid.Parse(userId);
-		var user = await _unitOfWork.GetRepository<IUserRepository>().GetByIdAsync(userGuid);
+    public async Task AssignRoleToUser(string userId, string roleName)
+    {
+        var userGuid = Guid.Parse(userId);
+        var user = await _unitOfWork.GetRepository<IUserRepository>().GetByIdAsync(userGuid);
 
-		if (user == null || user.IsDeleted)
-			throw new KeyNotFoundException(string.Format(ExceptionMessageConstants.User.NotFound, userId));
+        if (user == null || user.IsDeleted)
+            throw new KeyNotFoundException(string.Format(ExceptionMessageConstants.User.NotFound, userId));
 
-		RoleDto roleDto;
-		try
-		{
-			roleDto = await _roleService.GetByNameAsync(roleName);
-		}
-		catch (KeyNotFoundException)
-		{
-			roleDto = await _roleService.CreateAsync(new RoleForCreationDto { RoleName = roleName });
-		}
+        RoleDto roleDto;
+        try
+        {
+            roleDto = await _roleService.GetByNameAsync(roleName);
+        }
+        catch (KeyNotFoundException)
+        {
+            roleDto = await _roleService.CreateAsync(new RoleForCreationDto { RoleName = roleName });
+        }
 
-		user.RoleId = roleDto.RoleId;
-		user.LastUpdatedTime = DateTimeOffset.UtcNow;
-		user.LastUpdatedBy = "System";
+        user.RoleId = roleDto.RoleId;
+        user.LastUpdatedTime = DateTimeOffset.UtcNow;
+        user.LastUpdatedBy = "System";
 
-		_unitOfWork.GetRepository<IUserRepository>().Update(user);
-		await _unitOfWork.SaveChangesAsync();
-	}
+        _unitOfWork.GetRepository<IUserRepository>().Update(user);
+        await _unitOfWork.SaveChangesAsync();
+    }
 
-	private bool IsValidPassword(string password)
-	{
-		return Regex.IsMatch(password, @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':""\\|,.<>/?]).{8,}$");
-	}
+    private bool IsValidPassword(string password)
+    {
+        return Regex.IsMatch(password, @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':""\\|,.<>/?]).{8,}$");
+    }
 
     public async Task SendVerificationOtpAsync(Guid userId, string email)
     {
@@ -236,7 +227,6 @@ public class AuthenticationService : IAuthenticationService
         var salt = OtpHelper.CreateSalt();
         var hashed = OtpHelper.HashOtp(code, key, salt);
 
-        // THAY ĐỔI: Sử dụng DTO và Mapper để tạo entity
         var verificationDto = new EmailVerificationForCreationDto
         {
             UserId = userId,
@@ -247,15 +237,12 @@ public class AuthenticationService : IAuthenticationService
         };
 
         var verification = _mapper.Map<EmailVerification>(verificationDto);
-        // KẾT THÚC THAY ĐỔI
 
-        // revoke old pending ones
         await _unitOfWork.GetRepository<IEmailVerificationRepository>().RevokeAllByUserAsync(userId);
 
         _unitOfWork.GetRepository<IEmailVerificationRepository>().Add(verification);
         await _unitOfWork.SaveChangesAsync();
 
-        // send email
         var subject = "Mã xác thực tài khoản của bạn";
         var body = $"<p>Xin chào,</p><p>Mã xác thực (OTP) của bạn là: <strong>{code}</strong></p>" +
                    $"<p>Mã có hiệu lực trong {expiryMinutes} phút.</p>";
@@ -265,7 +252,6 @@ public class AuthenticationService : IAuthenticationService
 
     public async Task VerifyAccountByOtpAsync(string email, string code)
     {
-        // ... Logic phương thức này không thay đổi
         var repo = _unitOfWork.GetRepository<IEmailVerificationRepository>();
         var verification = await repo.GetLatestByEmailAsync(email);
         if (verification == null)
@@ -297,11 +283,9 @@ public class AuthenticationService : IAuthenticationService
             throw new UnauthorizedAccessException("Invalid verification code.");
         }
 
-        // success
         verification.IsUsed = true;
         repo.Update(verification);
 
-        // kích hoạt tài khoản
         var user = await _unitOfWork.GetRepository<IUserRepository>().GetByIdAsync(verification.UserId);
         if (user == null) throw new KeyNotFoundException("User not found.");
         user.Status = "Active";
@@ -315,18 +299,15 @@ public class AuthenticationService : IAuthenticationService
         if (string.IsNullOrWhiteSpace(email))
             throw new ArgumentException("Email is required.", nameof(email));
 
-        // 1. Tìm user theo email
         var user = await _unitOfWork.GetRepository<IUserRepository>().Entities
                      .FirstOrDefaultAsync(u => u.EmailAddress == email && !u.IsDeleted);
 
         if (user == null)
             throw new KeyNotFoundException("User not found.");
 
-        // 2. Nếu user đã active, không cần gửi
         if (string.Equals(user.Status, "Active", StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("Account already activated.");
 
-        // 3. Lấy OTP mới nhất để kiểm tra cooldown
         var emailVerRepo = _unitOfWork.GetRepository<IEmailVerificationRepository>();
         var last = await emailVerRepo.GetLatestByEmailAsync(email);
 
@@ -336,11 +317,9 @@ public class AuthenticationService : IAuthenticationService
             throw new InvalidOperationException($"Please wait before requesting another code. Try again in {resendCooldownSec} seconds.");
         }
 
-        // 4. Revoke old pending ones
         await emailVerRepo.RevokeAllByUserAsync(user.UserId);
         await _unitOfWork.SaveChangesAsync();
 
-        // 5. Create/send new OTP
         var otpLength = int.Parse(_configuration["Otp:Length"] ?? "6");
         var expiryMinutes = int.Parse(_configuration["Otp:ExpiryMinutes"] ?? "10");
         var key = _configuration["Otp:Key"] ?? throw new InvalidOperationException("Otp key not configured");
@@ -349,7 +328,6 @@ public class AuthenticationService : IAuthenticationService
         var salt = OtpHelper.CreateSalt();
         var hashed = OtpHelper.HashOtp(code, key, salt);
 
-        // THAY ĐỔI: Sử dụng DTO và Mapper để tạo entity
         var verificationDto = new EmailVerificationForCreationDto
         {
             UserId = user.UserId,
@@ -359,12 +337,10 @@ public class AuthenticationService : IAuthenticationService
             ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(expiryMinutes)
         };
         var verification = _mapper.Map<EmailVerification>(verificationDto);
-        // KẾT THÚC THAY ĐỔI
 
         emailVerRepo.Add(verification);
         await _unitOfWork.SaveChangesAsync();
 
-        // 6. Send email
         var subject = "Mã xác thực tài khoản của bạn";
         var body = $"<p>Xin chào {user.UserName},</p><p>Mã xác thực (OTP) của bạn là: <strong>{code}</strong></p>" +
                    $"<p>Mã có hiệu lực trong {expiryMinutes} phút.</p>";

@@ -2,19 +2,16 @@
 using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.User;
 using SPSS.Service.Services.Interfaces;
-using SPSS.Shared.Errors;
 using SPSS.Shared.Exceptions;
 using SPSS.Shared.Responses;
 using System;
-using System.Security;
-using System.Security.Claims;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace SPSS.Api.Controllers;
 
 [ApiController]
 [Route("api/users")]
-
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
@@ -31,58 +28,54 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> GetUsersPaged([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
         var response = await _userService.GetPagedAsync(pageNumber, pageSize);
-        return Ok(response);
+        return Ok(ApiResponse.Ok(response, "Users retrieved successfully."));
     }
 
     [HttpGet("{id:guid}")]
-	[Authorize]
-	public async Task<IActionResult> GetUserById(Guid id)
+    [Authorize]
+    public async Task<IActionResult> GetUserById(Guid id)
     {
         var user = await _userService.GetByIdAsync(id);
-        return Ok(user);
+        return Ok(ApiResponse.Ok(user, "User retrieved successfully."));
     }
 
     [HttpPost]
-	[Authorize(Roles = "Admin")]
-	public async Task<IActionResult> CreateUser([FromBody] UserForCreationDto dto)
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> CreateUser([FromBody] UserForCreationDto dto)
     {
-		if (!ModelState.IsValid)
-		{
-
-			var errorMessages = ModelState.Values
-				.SelectMany(v => v.Errors)
-				.Select(e => e.ErrorMessage)
-				.ToList();
-
-			throw new ValidationException(string.Join(" | ", errorMessages));
-		}
-		var createdUser = await _userService.CreateAsync(dto);
-        return CreatedAtAction(nameof(GetUserById), new { id = createdUser.UserId }, createdUser);
+        if (!ModelState.IsValid)
+        {
+            var errorMessages = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            throw new ValidationException(string.Join(" | ", errorMessages));
+        }
+        var createdUser = await _userService.CreateAsync(dto);
+        return CreatedAtAction(nameof(GetUserById), new { id = createdUser.UserId }, ApiResponse.Ok(createdUser, "User created successfully."));
     }
 
     [HttpPut("{id:guid}")]
-	[Authorize]
-	public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UserForUpdateDto dto)
+    [Authorize]
+    public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UserForUpdateDto dto)
     {
-		if (!ModelState.IsValid)
-		{
-
-			var errorMessages = ModelState.Values
-				.SelectMany(v => v.Errors)
-				.Select(e => e.ErrorMessage)
-				.ToList();
-
-			throw new ValidationException(string.Join(" | ", errorMessages));
-		}
-		var updatedUser = await _userService.UpdateAsync(id, dto);
-        return Ok(updatedUser);
+        if (!ModelState.IsValid)
+        {
+            var errorMessages = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            throw new ValidationException(string.Join(" | ", errorMessages));
+        }
+        var updatedUser = await _userService.UpdateAsync(id, dto);
+        return Ok(ApiResponse.Ok(updatedUser, "User updated successfully."));
     }
 
     [HttpDelete("{id:guid}")]
-	[Authorize(Roles = "Admin")]
-	public async Task<IActionResult> DeleteUser(Guid id)
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> DeleteUser(Guid id)
     {
         await _userService.DeleteAsync(id);
-        return NoContent();
+        return Ok(ApiResponse.Ok<object>(null, "User deleted successfully."));
     }
 }

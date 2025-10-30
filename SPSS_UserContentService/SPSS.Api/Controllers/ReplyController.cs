@@ -1,10 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.Reply;
-using SPSS.Service.Services.Interfaces; 
-using SPSS.Shared.Errors;
+using SPSS.Service.Services.Interfaces;
 using SPSS.Shared.Exceptions;
+using SPSS.Shared.Responses;
 using System;
+using System.Linq;
 using System.Security;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -28,37 +29,34 @@ public class ReplyController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateReply([FromBody] ReplyForCreationDto replyDto)
     {
-		if (!ModelState.IsValid)
-		{
-
-			var errorMessages = ModelState.Values
-				.SelectMany(v => v.Errors)
-				.Select(e => e.ErrorMessage)
-				.ToList();
-
-			throw new ValidationException(string.Join(" | ", errorMessages));
-		}
-		var userId = GetUserIdFromClaims();
+        if (!ModelState.IsValid)
+        {
+            var errorMessages = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            throw new ValidationException(string.Join(" | ", errorMessages));
+        }
+        var userId = GetUserIdFromClaims();
         var createdReply = await _replyService.CreateAsync(userId, replyDto);
-        return CreatedAtAction(null, new { id = createdReply.Id }, createdReply);
+        var response = ApiResponse.Ok(createdReply, "Reply created successfully.");
+        return CreatedAtAction(null, new { id = createdReply.Id }, response);
     }
 
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateReply(Guid id, [FromBody] ReplyForUpdateDto replyDto)
     {
-		if (!ModelState.IsValid)
-		{
-
-			var errorMessages = ModelState.Values
-				.SelectMany(v => v.Errors)
-				.Select(e => e.ErrorMessage)
-				.ToList();
-
-			throw new ValidationException(string.Join(" | ", errorMessages));
-		}
-		var userId = GetUserIdFromClaims();
+        if (!ModelState.IsValid)
+        {
+            var errorMessages = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            throw new ValidationException(string.Join(" | ", errorMessages));
+        }
+        var userId = GetUserIdFromClaims();
         var updatedReply = await _replyService.UpdateAsync(userId, replyDto, id);
-        return Ok(updatedReply);
+        return Ok(ApiResponse.Ok(updatedReply, "Reply updated successfully."));
     }
 
     [HttpDelete("{id:guid}")]
@@ -66,7 +64,7 @@ public class ReplyController : ControllerBase
     {
         var userId = GetUserIdFromClaims();
         await _replyService.DeleteAsync(userId, id);
-        return NoContent();
+        return Ok(ApiResponse.Ok<object>(null, "Reply deleted successfully."));
     }
 
     private Guid GetUserIdFromClaims()

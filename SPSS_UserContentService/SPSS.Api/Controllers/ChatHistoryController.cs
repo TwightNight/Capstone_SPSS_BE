@@ -2,14 +2,13 @@
 using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.ChatHistory;
 using SPSS.Service.Services.Interfaces;
-using System.Security.Claims;
-using System.Security;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using System;
-using Microsoft.Extensions.Logging;
-using SPSS.Shared.Errors;
 using SPSS.Shared.Exceptions;
+using SPSS.Shared.Responses;
+using System;
+using System.Linq;
+using System.Security;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace SPSS.Api.Controllers;
 
@@ -32,7 +31,7 @@ public class ChatHistoryController : ControllerBase
     {
         var userId = GetUserIdFromClaims();
         var sessionIds = await _chatService.GetRecentSessionsIdsAsync(userId, maxSessions);
-        return Ok(sessionIds);
+        return Ok(ApiResponse.Ok(sessionIds, "Recent session IDs retrieved successfully."));
     }
 
     [HttpGet("{sessionId}")]
@@ -40,7 +39,7 @@ public class ChatHistoryController : ControllerBase
     {
         var userId = GetUserIdFromClaims();
         var sessionHistory = await _chatService.GetChatHistoryByUserIdAndSessionIdAsync(userId, sessionId);
-        return Ok(sessionHistory);
+        return Ok(ApiResponse.Ok(sessionHistory, "Chat session history retrieved successfully."));
     }
 
     [HttpGet("recent-messages")]
@@ -48,27 +47,26 @@ public class ChatHistoryController : ControllerBase
     {
         var userId = GetUserIdFromClaims();
         var messages = await _chatService.GetChatHistoryByUserIdAsync(userId, limit);
-        return Ok(messages);
+        return Ok(ApiResponse.Ok(messages, "Recent chat messages retrieved successfully."));
     }
 
     [HttpPost]
     public async Task<IActionResult> SaveChatMessage([FromBody] ChatHistoryForCreationDto chatDto)
     {
-		if (!ModelState.IsValid)
-		{
-
-			var errorMessages = ModelState.Values
-				.SelectMany(v => v.Errors)
-				.Select(e => e.ErrorMessage)
-				.ToList();
-
-			throw new ValidationException(string.Join(" | ", errorMessages));
-		}
-		var userId = GetUserIdFromClaims();
-        chatDto.UserId = userId; 
+        if (!ModelState.IsValid)
+        {
+            var errorMessages = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            throw new ValidationException(string.Join(" | ", errorMessages));
+        }
+        var userId = GetUserIdFromClaims();
+        chatDto.UserId = userId;
 
         var createdMessage = await _chatService.SaveChatMessageAsync(chatDto);
-        return CreatedAtAction(nameof(GetMyChatSession), new { sessionId = createdMessage.SessionId }, createdMessage);
+        var response = ApiResponse.Ok(createdMessage, "Chat message saved successfully.");
+        return CreatedAtAction(nameof(GetMyChatSession), new { sessionId = createdMessage.SessionId }, response);
     }
 
     private Guid GetUserIdFromClaims()
@@ -76,8 +74,8 @@ public class ChatHistoryController : ControllerBase
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
         {
-            _logger.LogWarning("Không thể tìm thấy hoặc phân tích UserId từ claims.");
-            throw new SecurityException("Thông tin người dùng không hợp lệ trong token.");
+            _logger.LogWarning("Could not find or parse UserId from claims.");
+            throw new SecurityException("User identifier is missing or invalid in the security token.");
         }
         return userId;
     }
