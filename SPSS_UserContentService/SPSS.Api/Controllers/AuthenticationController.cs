@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SPSS.BusinessObject.Dto.Authentication;
+using SPSS.BusinessObject.Dto.VerifyOtp;
+using SPSS.Repository.Repositories.Interfaces;
 using SPSS.Service.Services.Interfaces;
 using SPSS.Shared.Errors;
 using System;
@@ -125,4 +127,22 @@ public class AuthenticationController : ControllerBase
         }
         return userId;
     }
+
+    [HttpPost("verify-account")]
+    [AllowAnonymous]
+    public async Task<IActionResult> VerifyAccount([FromBody] VerifyOtpRequest request)
+    {
+        await _authService.VerifyAccountByOtpAsync(request.Email, request.Code);
+        return NoContent();
+    }
+
+    // NOW: controller delegates resend entirely to service
+    [HttpPost("resend-otp")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ResendOtp([FromBody] ResendOtpRequest request)
+    {
+        await _authService.ResendVerificationOtpAsync(request.Email);
+        return NoContent();
+    }
+
 }

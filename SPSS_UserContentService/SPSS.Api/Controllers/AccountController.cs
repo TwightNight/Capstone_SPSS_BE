@@ -66,4 +66,12 @@ public class AccountController : ControllerBase
         }
         return userId;
     }
+    [HttpGet("whoami")]
+    [Authorize(Roles = "Admin")]
+    public IActionResult WhoAmI()
+    {
+        var isAuth = User.Identity?.IsAuthenticated;
+        var claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
+        return Ok(new { isAuth, claims });
+    }
 }

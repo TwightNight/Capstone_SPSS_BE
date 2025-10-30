@@ -1,6 +1,7 @@
 ﻿using Serilog;
 using SPSS.Api;
 using SPSS.Api.Middlewares;
+Microsoft.IdentityModel.Logging.IdentityModelEventSource.ShowPII = true;
 
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(WebApplication.CreateBuilder(args).Configuration)

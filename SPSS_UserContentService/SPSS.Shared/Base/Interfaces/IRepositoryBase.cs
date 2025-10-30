@@ -35,6 +35,8 @@ public interface IRepositoryBase<T, TKey> where T : class
 
     void Update(T entity);
 
+    void UpdateRange(IEnumerable<T> entities);
+
     void Delete(T entity);
 
     Task DeleteAsync(TKey id);

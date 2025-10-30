@@ -133,6 +133,20 @@ public class RepositoryBase<T, TKey> : IRepositoryBase<T, TKey> where T : class
         _context.Entry(entity).State = EntityState.Modified;
     }
 
+    public virtual void UpdateRange(IEnumerable<T> entities)
+    {
+        if (entities == null) return;
+
+        foreach (var entity in entities)
+        {
+            if (_context.Entry(entity).State == EntityState.Detached)
+            {
+                _dbSet.Attach(entity);
+            }
+            _context.Entry(entity).State = EntityState.Modified;
+        }
+    }
+
     public virtual void Delete(T entity)
     {
         if (_context.Entry(entity).State == EntityState.Detached)
