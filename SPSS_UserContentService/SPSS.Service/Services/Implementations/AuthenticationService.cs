@@ -172,8 +172,9 @@ public class AuthenticationService : IAuthenticationService
 
             await AssignRoleToUser(createdUser.UserId.ToString(), roleName);
 
-            await _unitOfWork.CommitTransactionAsync();
-            await SendVerificationOtpAsync(createdUser.UserId, createdUser.EmailAddress);
+			await SendVerificationOtpAsync(createdUser.UserId, createdUser.EmailAddress);
+
+			await _unitOfWork.CommitTransactionAsync();
 
             var mapItem = _mapper.Map<AuthUserDto>(createdUser);
 
