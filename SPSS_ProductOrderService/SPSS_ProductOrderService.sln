@@ -5,6 +5,10 @@ VisualStudioVersion = 17.13.35931.197
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SPSS.BusinessObject", "SPSS.BusinessObject\SPSS.BusinessObject.csproj", "{BA94E722-EB4F-481E-9454-540BFF25E066}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SPSS.Shared", "SPSS.Shared\SPSS.Shared.csproj", "{06F9CD67-BCAA-4B5E-96AC-AF103A9D155B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SPSS.Repository", "SPSS.Repository\SPSS.Repository.csproj", "{A9A87AE8-9CCF-4802-8DEA-3BD808BFEB97}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{BA94E722-EB4F-481E-9454-540BFF25E066}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BA94E722-EB4F-481E-9454-540BFF25E066}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BA94E722-EB4F-481E-9454-540BFF25E066}.Release|Any CPU.Build.0 = Release|Any CPU
+		{06F9CD67-BCAA-4B5E-96AC-AF103A9D155B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{06F9CD67-BCAA-4B5E-96AC-AF103A9D155B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{06F9CD67-BCAA-4B5E-96AC-AF103A9D155B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{06F9CD67-BCAA-4B5E-96AC-AF103A9D155B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A9A87AE8-9CCF-4802-8DEA-3BD808BFEB97}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A9A87AE8-9CCF-4802-8DEA-3BD808BFEB97}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A9A87AE8-9CCF-4802-8DEA-3BD808BFEB97}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A9A87AE8-9CCF-4802-8DEA-3BD808BFEB97}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

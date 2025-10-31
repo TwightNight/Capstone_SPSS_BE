@@ -14,6 +14,7 @@ using SPSS.Service.Services.Implementations;
 using SPSS.Service.Services.Interfaces;
 using SPSS.Shared.Base.Implementations;
 using SPSS.Shared.Base.Interfaces;
+using SPSS.Shared.Constants;
 using SPSS.Shared.Helpers;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -87,9 +88,8 @@ public static class DependencyInjection
                     NameClaimType = ClaimTypes.Name
                 };
 
-                // Workaround: dùng JwtSecurityTokenHandler thay vì JsonWebTokenHandler
-                options.SecurityTokenValidators.Clear();
-                options.SecurityTokenValidators.Add(new JwtSecurityTokenHandler());
+                options.TokenHandlers.Clear();
+                options.TokenHandlers.Add(new JwtSecurityTokenHandler());
 
                 options.Events = new JwtBearerEvents
                 {
@@ -106,8 +106,10 @@ public static class DependencyInjection
                         var logger = context.HttpContext.RequestServices
                                           .GetRequiredService<ILoggerFactory>()
                                           .CreateLogger("JwtAuth");
-                        logger.LogInformation("Token validated. Claims: {Claims}",
-                            string.Join(", ", context.Principal.Claims.Select(c => $"{c.Type}={c.Value}")));
+                        var claimsLog = context.Principal?.Claims.Select(c => $"{c.Type}={c.Value}")
+                ?? Enumerable.Empty<string>();
+
+                        logger.LogInformation("Token validated. Claims: {Claims}", string.Join(", ", claimsLog));
                         return Task.CompletedTask;
                     }
                 };
