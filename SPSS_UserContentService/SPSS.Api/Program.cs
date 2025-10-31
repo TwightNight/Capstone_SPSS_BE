@@ -1,58 +1,35 @@
-﻿using Serilog;
-using SPSS.Api;
+﻿using SPSS.Api;
 using SPSS.Api.Middlewares;
+
 Microsoft.IdentityModel.Logging.IdentityModelEventSource.ShowPII = true;
 
-Log.Logger = new LoggerConfiguration()
-    .ReadFrom.Configuration(WebApplication.CreateBuilder(args).Configuration)
-    .CreateBootstrapLogger();
+var builder = WebApplication.CreateBuilder(args);
 
-try
-{
-    Log.Information("Initializing the application...");
+// Đăng ký các dịch vụ
+builder.Services.AddApplicationServices();
+builder.Services.AddPersistenceServices(builder.Configuration);
+builder.Services.AddPresentationServices(builder.Configuration);
 
-    var builder = WebApplication.CreateBuilder(args);
+var app = builder.Build();
 
-    builder.Host.UseSerilog((context, services, configuration) => configuration
-        .ReadFrom.Configuration(context.Configuration)
-        .ReadFrom.Services(services)
-        .Enrich.FromLogContext());
+//if (app.Environment.IsDevelopment())
+//{
+//    app.UseSwagger();
+//    app.UseSwaggerUI();
+//}
+app.UseSwagger();
+app.UseSwaggerUI();
 
-    builder.Services.AddApplicationServices();
-    builder.Services.AddPersistenceServices(builder.Configuration);
-    builder.Services.AddPresentationServices(builder.Configuration);
+//app.UseHttpsRedirection();
 
-    var app = builder.Build();
+app.UseMiddleware<ExceptionMiddleware>();
 
-    app.UseSerilogRequestLogging();
+app.UseCors("AllowAll");
 
-	//if (app.Environment.IsDevelopment())
-	//{
-	//    app.UseSwagger();
-	//    app.UseSwaggerUI();
-	//}
-	app.UseSwagger();
-	app.UseSwaggerUI();
-	app.UseHttpsRedirection();
+app.UseAuthentication();
 
-    app.UseMiddleware<ExceptionMiddleware>();
+app.UseAuthorization();
 
-    app.UseCors("AllowAll");
+app.MapControllers();
 
-    app.UseAuthentication();
-
-    app.UseAuthorization();
-
-    app.MapControllers();
-
-    Log.Information("Service started successfully.");
-    app.Run();
-}
-catch (Exception ex)
-{
-    Log.Fatal(ex, "Service failed to start!");
-}
-finally
-{
-    Log.CloseAndFlush();
-}
+app.Run();

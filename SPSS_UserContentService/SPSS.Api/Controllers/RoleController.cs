@@ -12,7 +12,7 @@ namespace SPSS.Api.Controllers;
 
 [ApiController]
 [Route("api/roles")]
-//[Authorize(Roles = "Admin")] 
+[Authorize(Roles = "Admin")]
 public class RoleController : ControllerBase
 {
     private readonly IRoleService _roleService;
