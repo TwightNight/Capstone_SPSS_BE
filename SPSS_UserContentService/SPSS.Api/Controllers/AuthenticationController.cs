@@ -75,7 +75,7 @@ public class AuthenticationController : ControllerBase
     }
 
     [HttpPost("change-password")]
-    [Authorize]
+    [AllowAnonymous]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {
         if (!ModelState.IsValid)
