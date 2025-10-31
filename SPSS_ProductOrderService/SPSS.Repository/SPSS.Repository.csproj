@@ -7,8 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SPSS.BusinessObject\SPSS.BusinessObject.csproj" />
-    <ProjectReference Include="..\SPSS.Shared\SPSS.Shared.csproj" />
+    <ProjectReference Include="..\SPSS.BusinessObject\SPSS.BusinessObject.csproj">
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\SPSS.Shared\SPSS.Shared.csproj">
+      <Private>True</Private>
+    </ProjectReference>
   </ItemGroup>
 
 </Project>
