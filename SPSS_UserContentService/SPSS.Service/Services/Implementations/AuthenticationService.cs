@@ -26,20 +26,11 @@ public class AuthenticationService : IAuthenticationService
     private readonly IPasswordHasher _passwordHasher;
     private readonly IConfiguration _configuration;
     private readonly EmailSender _emailSender;
+
     public AuthenticationService(IConfiguration configuration, EmailSender emailSender, IRoleService roleService, IUserService userService, IUnitOfWork unitOfWork, ITokenService tokenService, IMapper mapper, IPasswordHasher passwordHasher)
     {
         _configuration = configuration;
         _emailSender = emailSender;
-        _unitOfWork = unitOfWork;
-        _tokenService = tokenService;
-        _mapper = mapper;
-        _userService = userService;
-        _roleService = roleService;
-        _passwordHasher = passwordHasher;
-    }
-
-    public AuthenticationService(IRoleService roleService, IUserService userService, IUnitOfWork unitOfWork, ITokenService tokenService, IMapper mapper, IPasswordHasher passwordHasher)
-    {
         _unitOfWork = unitOfWork;
         _tokenService = tokenService;
         _mapper = mapper;
@@ -58,6 +49,12 @@ public class AuthenticationService : IAuthenticationService
 
         if (user == null || user.IsDeleted)
             throw new UnauthorizedAccessException(ExceptionMessageConstants.Authentication.InvalidCredentials);
+
+        // [SỬA ĐỔI] Kiểm tra xem tài khoản đã được kích hoạt hay chưa
+        if (!string.Equals(user.Status, "Active", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new UnauthorizedAccessException(ExceptionMessageConstants.Authentication.AccountNotActive);
+        }
 
         if (!_passwordHasher.Verify(loginRequest.Password, user.Password))
             throw new UnauthorizedAccessException(ExceptionMessageConstants.Authentication.InvalidCredentials);
@@ -157,7 +154,9 @@ public class AuthenticationService : IAuthenticationService
         var userForCreationDto = _mapper.Map<UserForCreationDto>(registerRequest);
 
         userForCreationDto.Password = _passwordHasher.Hash(registerRequest.Password);
-        userForCreationDto.Status = "Active";
+
+        // [SỬA ĐỔI] Đặt trạng thái ban đầu là "Inactive"
+        userForCreationDto.Status = "Inactive";
 
         UserDto? createdUser = null;
 
@@ -167,17 +166,14 @@ public class AuthenticationService : IAuthenticationService
             createdUser = await _userService.CreateAsync(userForCreationDto);
             if (createdUser == null)
             {
-                throw new ApplicationException(ExceptionMessageConstants.Authentication.RegistrationFailed);
+                throw new ApplicationException(ExceptionMessageConstants.Authentication.RegistrationFailedGeneric);
             }
 
             await AssignRoleToUser(createdUser.UserId.ToString(), roleName);
-
-			await SendVerificationOtpAsync(createdUser.UserId, createdUser.EmailAddress);
-
-			await _unitOfWork.CommitTransactionAsync();
+            await SendVerificationOtpAsync(createdUser.UserId, createdUser.EmailAddress);
+            await _unitOfWork.CommitTransactionAsync();
 
             var mapItem = _mapper.Map<AuthUserDto>(createdUser);
-
             return mapItem;
         }
         catch (Exception ex)
@@ -222,7 +218,7 @@ public class AuthenticationService : IAuthenticationService
     {
         var otpLength = int.Parse(_configuration["Otp:Length"] ?? "6");
         var expiryMinutes = int.Parse(_configuration["Otp:ExpiryMinutes"] ?? "10");
-        var key = _configuration["Otp:Key"] ?? throw new InvalidOperationException("Otp key not configured");
+        var key = _configuration["Otp:Key"] ?? throw new InvalidOperationException(ExceptionMessageConstants.Otp.KeyNotConfigured);
 
         var code = OtpHelper.GenerateNumericOtp(otpLength);
         var salt = OtpHelper.CreateSalt();
@@ -244,9 +240,9 @@ public class AuthenticationService : IAuthenticationService
         _unitOfWork.GetRepository<IEmailVerificationRepository>().Add(verification);
         await _unitOfWork.SaveChangesAsync();
 
-        var subject = "Mã xác thực tài khoản của bạn";
-        var body = $"<p>Xin chào,</p><p>Mã xác thực (OTP) của bạn là: <strong>{code}</strong></p>" +
-                   $"<p>Mã có hiệu lực trong {expiryMinutes} phút.</p>";
+        var subject = "Your Account Verification Code";
+        var body = $"<p>Hello,</p><p>Your verification code (OTP) is: <strong>{code}</strong></p>" +
+                   $"<p>This code is valid for {expiryMinutes} minutes.</p>";
 
         await _emailSender.SendEmailAsync(email, subject, body);
     }
@@ -256,20 +252,20 @@ public class AuthenticationService : IAuthenticationService
         var repo = _unitOfWork.GetRepository<IEmailVerificationRepository>();
         var verification = await repo.GetLatestByEmailAsync(email);
         if (verification == null)
-            throw new KeyNotFoundException("Verification record not found.");
+            throw new KeyNotFoundException(ExceptionMessageConstants.Verification.NotFound);
 
         if (verification.IsUsed || verification.IsRevoked)
-            throw new InvalidOperationException("This verification code is no longer valid.");
+            throw new InvalidOperationException(ExceptionMessageConstants.Verification.CodeNoLongerValid);
 
         if (verification.ExpiresAt < DateTimeOffset.UtcNow)
         {
             verification.IsRevoked = true;
             repo.Update(verification);
             await _unitOfWork.SaveChangesAsync();
-            throw new InvalidOperationException("Verification code expired.");
+            throw new InvalidOperationException(ExceptionMessageConstants.Verification.CodeExpired);
         }
 
-        var key = _configuration["Otp:Key"] ?? throw new InvalidOperationException("Otp key not configured");
+        var key = _configuration["Otp:Key"] ?? throw new InvalidOperationException(ExceptionMessageConstants.Otp.KeyNotConfigured);
         var hashed = OtpHelper.HashOtp(code, key, verification.Salt);
 
         if (hashed != verification.CodeHash)
@@ -281,14 +277,15 @@ public class AuthenticationService : IAuthenticationService
             }
             repo.Update(verification);
             await _unitOfWork.SaveChangesAsync();
-            throw new UnauthorizedAccessException("Invalid verification code.");
+            throw new UnauthorizedAccessException(ExceptionMessageConstants.Verification.InvalidCode);
         }
 
         verification.IsUsed = true;
         repo.Update(verification);
 
         var user = await _unitOfWork.GetRepository<IUserRepository>().GetByIdAsync(verification.UserId);
-        if (user == null) throw new KeyNotFoundException("User not found.");
+        if (user == null) throw new KeyNotFoundException(string.Format(ExceptionMessageConstants.User.NotFound, verification.UserId));
+
         user.Status = "Active";
         _unitOfWork.GetRepository<IUserRepository>().Update(user);
 
@@ -298,16 +295,16 @@ public class AuthenticationService : IAuthenticationService
     public async Task ResendVerificationOtpAsync(string email)
     {
         if (string.IsNullOrWhiteSpace(email))
-            throw new ArgumentException("Email is required.", nameof(email));
+            throw new ArgumentException(ExceptionMessageConstants.Validation.EmailIsRequired, nameof(email));
 
         var user = await _unitOfWork.GetRepository<IUserRepository>().Entities
                      .FirstOrDefaultAsync(u => u.EmailAddress == email && !u.IsDeleted);
 
         if (user == null)
-            throw new KeyNotFoundException("User not found.");
+            throw new KeyNotFoundException(ExceptionMessageConstants.User.NotFoundByEmail);
 
         if (string.Equals(user.Status, "Active", StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Account already activated.");
+            throw new InvalidOperationException(ExceptionMessageConstants.Authentication.AccountAlreadyActive);
 
         var emailVerRepo = _unitOfWork.GetRepository<IEmailVerificationRepository>();
         var last = await emailVerRepo.GetLatestByEmailAsync(email);
@@ -315,7 +312,7 @@ public class AuthenticationService : IAuthenticationService
         var resendCooldownSec = int.Parse(_configuration["Otp:ResendCooldownSeconds"] ?? "60");
         if (last != null && (DateTimeOffset.UtcNow - last.CreatedAt).TotalSeconds < resendCooldownSec)
         {
-            throw new InvalidOperationException($"Please wait before requesting another code. Try again in {resendCooldownSec} seconds.");
+            throw new InvalidOperationException(string.Format(ExceptionMessageConstants.Verification.ResendCooldown, resendCooldownSec));
         }
 
         await emailVerRepo.RevokeAllByUserAsync(user.UserId);
@@ -323,7 +320,7 @@ public class AuthenticationService : IAuthenticationService
 
         var otpLength = int.Parse(_configuration["Otp:Length"] ?? "6");
         var expiryMinutes = int.Parse(_configuration["Otp:ExpiryMinutes"] ?? "10");
-        var key = _configuration["Otp:Key"] ?? throw new InvalidOperationException("Otp key not configured");
+        var key = _configuration["Otp:Key"] ?? throw new InvalidOperationException(ExceptionMessageConstants.Otp.KeyNotConfigured);
 
         var code = OtpHelper.GenerateNumericOtp(otpLength);
         var salt = OtpHelper.CreateSalt();
@@ -342,9 +339,9 @@ public class AuthenticationService : IAuthenticationService
         emailVerRepo.Add(verification);
         await _unitOfWork.SaveChangesAsync();
 
-        var subject = "Mã xác thực tài khoản của bạn";
-        var body = $"<p>Xin chào {user.UserName},</p><p>Mã xác thực (OTP) của bạn là: <strong>{code}</strong></p>" +
-                   $"<p>Mã có hiệu lực trong {expiryMinutes} phút.</p>";
+        var subject = "Your Account Verification Code";
+        var body = $"<p>Hello {user.UserName},</p><p>Your new verification code (OTP) is: <strong>{code}</strong></p>" +
+                   $"<p>This code is valid for {expiryMinutes} minutes.</p>";
 
         await _emailSender.SendEmailAsync(email, subject, body);
     }

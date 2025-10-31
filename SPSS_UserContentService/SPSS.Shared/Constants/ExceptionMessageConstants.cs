@@ -32,18 +32,25 @@
 			public const string InUseByAddresses = "Cannot delete country. It is currently in use by one or more addresses.";
 		}
 
-		public static class User
-		{
-			public const string NotFound = "User with ID {0} not found.";
-			public const string UserDeleted = "User with ID {0} is deleted.";
-			public const string EmailTaken = "Email '{0}' is already in use.";
-			public const string UsernameTaken = "Username '{0}' is already in use.";
-			public const string PhoneTaken = "Phone number '{0}' is already in use.";
-			public const string AvatarUrlInvalid = "Avatar URL cannot be null or empty.";
-			public const string AccountNotFound = "Account for user {0} not found.";
-		}
+        public static class User
+        {
+            public const string NotFound = "User with ID {0} not found.";
+            public const string NotFoundByEmail = "User not found with the specified email."; // ADDED
+            public const string UserDeleted = "User with ID {0} is deleted.";
+            public const string EmailTaken = "Email '{0}' is already in use.";
+            public const string UsernameTaken = "Username '{0}' is already in use.";
+            public const string PhoneTaken = "Phone number '{0}' is already in use.";
+            public const string AvatarUrlInvalid = "Avatar URL cannot be null or empty.";
+            public const string AccountNotFound = "Account for user {0} not found.";
 
-		public static class Transaction
+            public const string UserDataNull = "User data cannot be null.";
+
+
+            public const string NotFoundByUsername = "User with username '{0}' not found.";
+        }
+		
+
+        public static class Transaction
 		{
 			public const string NotFound = "Transaction with ID {0} not found.";
 			public const string UserNotFound = "User with ID {0} not found.";
@@ -62,25 +69,46 @@
 			public const string InvalidAccessToken = "Invalid access token.";
 		}
 
-		public static class Validation
-		{
-			public const string InvalidArgument = "Invalid argument: {0}";
-			public const string MissingField = "Missing required field: {0}";
-		}
+        public static class Validation
+        {
+            public const string InvalidArgument = "Invalid argument: {0}";
+            public const string MissingField = "Missing required field: {0}";
+            public const string EmailIsRequired = "Email is required."; // ADDED
+        }
 
-		public static class Authentication
-		{
-			public const string InvalidCredentials = "Invalid username/email or password.";
-			public const string CurrentPasswordIncorrect = "Current password is incorrect.";
-			public const string InvalidPasswordFormat = "Password is not valid. Must be at least 8 characters, include uppercase, lowercase, number, and special character.";
-			public const string UsernameTaken = "Username '{0}' is already taken.";
-			public const string EmailTaken = "Email '{0}' is already taken.";
-			public const string RegistrationFailed = "Registration failed: {0}";
-			public const string RefreshTokenNotFound = "Refresh token not found.";
-			public const string RefreshTokenRevoked = "Refresh token has been revoked.";
-		}
+        public static class Authentication
+        {
+            public const string InvalidCredentials = "Invalid username/email or password.";
+            public const string CurrentPasswordIncorrect = "Current password is incorrect.";
+            public const string InvalidPasswordFormat = "Password is not valid. Must be at least 8 characters, include uppercase, lowercase, number, and special character.";
+            public const string AccountNotActive = "Account has not been activated. Please check your email to verify your account.";
 
-		public static class Blog
+            public const string UsernameTaken = "Username '{0}' is already taken.";
+            public const string EmailTaken = "Email '{0}' is already taken.";
+            public const string RegistrationFailed = "Registration failed: {0}";
+            public const string RegistrationFailedGeneric = "Registration failed due to an unexpected error."; // ADDED
+            public const string AccountAlreadyActive = "Account is already activated."; // ADDED
+            public const string RefreshTokenNotFound = "Refresh token not found.";
+            public const string RefreshTokenRevoked = "Refresh token has been revoked.";
+        }
+
+        public static class Otp
+        {
+            public const string KeyNotConfigured = "OTP key not configured.";
+        }
+
+        // ADDED NEW CLASS
+        public static class Verification
+        {
+            public const string NotFound = "Verification record not found.";
+            public const string CodeNoLongerValid = "This verification code is no longer valid.";
+            public const string CodeExpired = "Verification code has expired.";
+            public const string InvalidCode = "Invalid verification code.";
+            public const string ResendCooldown = "Please wait before requesting another code. Try again in {0} seconds.";
+        }
+
+
+        public static class Blog
 		{
 			// Validation
 			public const string BlogDataNull = "Blog data cannot be null.";
@@ -123,9 +151,11 @@
 			public const string ReplyNotFound = "Reply with ID {0} not found.";
 			public const string ReviewNotFound = "The specified reviewId does not exist.";
 			public const string FailedToSave = "Failed to save reply: {0}";
-		}
+            public const string NotOwner = "You are not the owner of this reply.";
 
-		public static class Role
+        }
+
+        public static class Role
 		{
 			public const string RoleDataNull = "Role data cannot be null.";
 			public const string NotFound = "Role with ID {0} not found.";
