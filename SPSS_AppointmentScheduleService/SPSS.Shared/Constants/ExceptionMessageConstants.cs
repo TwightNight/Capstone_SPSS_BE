@@ -15,6 +15,8 @@ namespace SPSS.Shared.Constants
 			public const string HolidayDateRequired = "Holiday date is required.";
 			public const string DescriptionRequired = "Description is required.";
 			public const string DescriptionTooLong = "Description cannot exceed 500 characters.";
+			public const string HolidayDateInvalid = "HolidayDate must be a valid date";
+
 
 			// Not found
 			public const string NotFound = "Holiday with ID {0} not found.";
@@ -27,6 +29,26 @@ namespace SPSS.Shared.Constants
 			public const string FailedToCreate = "Failed to create holiday: {0}";
 			public const string FailedToUpdate = "Failed to update holiday: {0}";
 			public const string FailedToDelete = "Failed to delete holiday: {0}";
+		}
+
+		public static class Slot
+		{
+			public const string SlotMinutesInvalid = "SlotMinutes must be greater than zero.";
+			public const string BreakMinutesInvalid = "BreakMinutes cannot be negative.";
+			public const string SlotMinutesRequired = "Slot minutes is required.";
+			public const string BreakMinutesRequired = "Break minutes is required.";
+
+
+			public const string SlotTooShort = "SlotMinutes must be long enough to accommodate the break period.";
+			public const string SlotConfigurationConflict = "The specified slot configuration conflicts with existing schedule settings.";
+			public const string SlotCreationFailed = "Failed to create slot due to an internal error.";
+
+			//Not found
+			public const string NotFound = "Slot with ID {0} not found.";
+
+			public const string DuplicateSlotMinutes = "A slot already exists for {0}.";
+
+
 		}
 	}
 }

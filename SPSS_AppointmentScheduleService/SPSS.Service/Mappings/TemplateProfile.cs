@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using SPSS.Shared.DTOs.Appointment;
+using SPSS.Shared.DTOs.Template;
 using SPSS.BusinessObject.Models;
 using System;
 using System.Collections.Generic;
@@ -9,11 +9,12 @@ using System.Threading.Tasks;
 
 namespace SPSS.Service.Mappings
 {
-	public class AppointmentProfile : Profile
+	public class TemplateProfile : Profile
 	{
-		public AppointmentProfile()
+		public TemplateProfile()
 		{
-			CreateMap<Appointment, AppointmentResponseDto>();
+			// CreateMap<Source, Destination>();
+			CreateMap<WorkTemplate, TemplateResponse>().ReverseMap();
 		}
 	}
 }

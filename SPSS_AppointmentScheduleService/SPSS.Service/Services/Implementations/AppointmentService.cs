@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
-using SPSS.BusinessObject.DTOs.Appointment;
+using SPSS.Shared.DTOs.Appointment;
 using SPSS.BusinessObject.Models;
 using SPSS.Repository.Repositories.Interfaces;
 using SPSS.Repository.UnitOfWork;

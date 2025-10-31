@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SPSS.BusinessObject.DTOs.Holiday
+namespace SPSS.Shared.DTOs.Holiday
 {
 	public class HolidayResponseDto
 	{

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SPSS.BusinessObject.DTOs.Slot
+namespace SPSS.Shared.DTOs.Slot
 {
 	public class SlotResponse
 	{

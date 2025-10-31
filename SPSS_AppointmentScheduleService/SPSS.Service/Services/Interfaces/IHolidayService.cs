@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore.Query;
-using SPSS.BusinessObject.DTOs.Holiday;
+using SPSS.Shared.DTOs.Holiday;
 using SPSS.BusinessObject.Models;
 using SPSS.Shared.Responses;
 using System;
@@ -14,9 +14,6 @@ namespace SPSS.Service.Services.Interfaces
 	public interface IHolidayService
 	{
 		Task<HolidayResponseDto?> GetByIdAsync(Guid id);
-		Task<HolidayResponseDto?> GetByIdAsync(
-			Guid id,
-			Func<IQueryable<Holiday>, IIncludableQueryable<Holiday, object>>? include = null);
 		Task<IEnumerable<HolidayResponseDto>> GetAllAsync();
 		Task<IEnumerable<HolidayResponseDto>> GetAsync(
 			Expression<Func<Holiday, bool>>? filter = null,
