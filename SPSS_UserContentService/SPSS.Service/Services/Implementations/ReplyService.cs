@@ -1,13 +1,13 @@
 ﻿using AutoMapper;
-using Microsoft.EntityFrameworkCore; // Cần cho .Include()
+using Microsoft.EntityFrameworkCore;
 using SPSS.Service.Services.Interfaces;
 using SPSS.BusinessObject.Dto.Reply;
 using SPSS.BusinessObject.Models;
 using SPSS.Repository.Repositories.Interfaces;
 using SPSS.Repository.UnitOfWork.Interfaces;
 using SPSS.Shared.Constants;
-using System.Security; // Cần cho SecurityException
 using System;
+using System.Security; // Mặc dù không dùng SecurityException nữa, vẫn nên giữ để tham khảo
 using System.Threading.Tasks;
 
 namespace SPSS.Service.Services.Implementations
@@ -18,8 +18,6 @@ namespace SPSS.Service.Services.Implementations
         private readonly IMapper _mapper;
         private readonly IReviewRepository _reviewRepository;
         private readonly IReplyRepository _replyRepository;
-        // Giả sử bạn có IUserRepository để lấy User,
-        // nhưng nếu không, chúng ta có thể dùng Include()
 
         public ReplyService(IUnitOfWork unitOfWork, IMapper mapper)
         {
@@ -38,7 +36,7 @@ namespace SPSS.Service.Services.Implementations
             if (!reviewExists)
                 throw new ArgumentException(ExceptionMessageConstants.Reply.ReviewNotFound, nameof(replyDto.ReviewId));
 
-            var reply = _mapper.Map<Reply>(replyDto); // Dùng AutoMapper
+            var reply = _mapper.Map<Reply>(replyDto);
 
             reply.Id = Guid.NewGuid();
             reply.CreatedTime = DateTimeOffset.UtcNow;
@@ -47,7 +45,6 @@ namespace SPSS.Service.Services.Implementations
             reply.LastUpdatedTime = DateTimeOffset.UtcNow;
             reply.LastUpdatedBy = userId.ToString();
             reply.IsDeleted = false;
-            // reply.ReviewId đã được map từ DTO
 
             try
             {
@@ -56,13 +53,14 @@ namespace SPSS.Service.Services.Implementations
             }
             catch (Exception ex)
             {
-                throw new Exception(string.Format(ExceptionMessageConstants.Reply.FailedToSave, ex.Message), ex);
+                // Sử dụng hằng số đã có
+                throw new ApplicationException(string.Format(ExceptionMessageConstants.Reply.FailedToSave, ex.Message), ex);
             }
 
-            // để AutoMapper có thể map AvatarUrl và UserName
+            // Lấy lại reply với thông tin User để map DTO đầy đủ
             var createdReply = await _replyRepository.GetSingleAsync(
                 predicate: r => r.Id == reply.Id,
-                include: q => q.Include(r => r.User) // Giả sử Reply model có navigation "User"
+                include: q => q.Include(r => r.User)
             );
 
             return _mapper.Map<ReplyDto>(createdReply);
@@ -77,10 +75,10 @@ namespace SPSS.Service.Services.Implementations
             if (reply == null)
                 throw new KeyNotFoundException(string.Format(ExceptionMessageConstants.Reply.ReplyNotFound, id));
 
+            // [SỬA ĐỔI] Sử dụng hằng số và UnauthorizedAccessException
             if (reply.UserId != userId)
             {
-                // TODO: Thêm NotOwner vào ExceptionMessageConstants.Reply
-                throw new SecurityException("You are not the owner of this reply.");
+                throw new UnauthorizedAccessException(ExceptionMessageConstants.Reply.NotOwner);
             }
 
             _mapper.Map(replyDto, reply);
@@ -90,7 +88,6 @@ namespace SPSS.Service.Services.Implementations
             _replyRepository.Update(reply);
             await _unitOfWork.SaveChangesAsync();
 
-            // Cần Include User để trả về DTO đầy đủ
             var updatedReply = await _replyRepository.GetSingleAsync(
                 predicate: r => r.Id == reply.Id,
                 include: q => q.Include(r => r.User)
@@ -105,13 +102,14 @@ namespace SPSS.Service.Services.Implementations
             if (reply == null)
                 throw new KeyNotFoundException(string.Format(ExceptionMessageConstants.Reply.ReplyNotFound, id));
 
+            // [SỬA ĐỔI] Sử dụng hằng số và UnauthorizedAccessException
             if (reply.UserId != userId)
             {
-                // TODO: Thêm NotOwner vào ExceptionMessageConstants.Reply
-                throw new SecurityException("You are not the owner of this reply.");
+                throw new UnauthorizedAccessException(ExceptionMessageConstants.Reply.NotOwner);
             }
 
-            _replyRepository.Delete(reply); // Dùng soft delete nếu nghiệp vụ yêu cầu
+            // Thay đổi nhỏ: bạn có thể dùng phương thức DeleteByIdAsync để code gọn hơn nếu có
+            _replyRepository.Delete(reply);
             await _unitOfWork.SaveChangesAsync();
         }
     }

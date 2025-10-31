@@ -25,8 +25,12 @@ public class AuthenticationMappingProfile : Profile
             .ForMember(dest => dest.Password, opt => opt.Ignore());
 
         CreateMap<UserForCreationDto, User>();
+
         CreateMap<User, UserDto>();
-        CreateMap<UserDto, AuthUserDto>();
+
+        CreateMap<UserDto, AuthUserDto>()
+            .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.RoleName));
+
         CreateMap<EmailVerificationForCreationDto, EmailVerification>()
             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()))
             .ForMember(dest => dest.IsUsed, opt => opt.MapFrom(src => false))
