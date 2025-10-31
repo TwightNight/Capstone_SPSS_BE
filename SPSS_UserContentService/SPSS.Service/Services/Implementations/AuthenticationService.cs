@@ -64,9 +64,11 @@ public class AuthenticationService : IAuthenticationService
         var accessToken = _tokenService.GenerateAccessToken(authUserDto);
         var refreshToken = _tokenService.GenerateRefreshToken();
 
-        var refreshTokenEntity = new RefreshToken
+		var random = new Random();
+		var refreshTokenEntity = new RefreshToken
         {
-            Token = refreshToken,
+			Id = (int)(DateTime.UtcNow.Ticks % int.MaxValue) + random.Next(1, 9999),
+			Token = refreshToken,
             UserId = user.UserId,
             ExpiryTime = DateTime.UtcNow.AddDays(7),
             Created = DateTime.UtcNow,
