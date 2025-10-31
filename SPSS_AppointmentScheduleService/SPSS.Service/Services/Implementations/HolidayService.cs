@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore.Query;
-using SPSS.BusinessObject.DTOs.Holiday;
+using SPSS.Shared.DTOs.Holiday;
 using SPSS.BusinessObject.Models;
 using SPSS.Repository.Repositories.Implementations;
 using SPSS.Repository.Repositories.Interfaces;
@@ -38,25 +38,11 @@ namespace SPSS.Service.Services.Implementations
 			var holiday = await _holidayRepository.GetByIdAsync(id);
 
 			if (holiday == null || holiday.IsDeleted)
-				return null;
-
-			return _mapper.Map<HolidayResponseDto>(holiday);
-		}
-
-		public async Task<HolidayResponseDto?> GetByIdAsync(
-			Guid id,
-			Func<IQueryable<Holiday>, IIncludableQueryable<Holiday, object>>? include = null)
-		{
-			var holiday = await _holidayRepository.GetFirstOrDefaultAsync(
-				predicate: a => a.Id == id && !a.IsDeleted,
-				include: include
-			);
-
-			if (holiday == null)
 				throw new NotFoundException(string.Format(ExceptionMessageConstants.Holiday.NotFound, id));
 
 			return _mapper.Map<HolidayResponseDto>(holiday);
 		}
+
 
 		public async Task<IEnumerable<HolidayResponseDto>> GetAllAsync()
 		{
@@ -93,7 +79,7 @@ namespace SPSS.Service.Services.Implementations
 			}
 
 			// Default order: by CreatedAt descending
-			var finalOrderBy = orderBy ?? (q => q.OrderByDescending(a => a.CreatedAt));
+			var finalOrderBy = orderBy ?? (q => q.OrderByDescending(a => a.HolidayDate));
 
 			var holiday = await _holidayRepository.GetAsync(
 				filter: finalFilter,
@@ -110,7 +96,7 @@ namespace SPSS.Service.Services.Implementations
 				pageNumber: pageNumber,
 				pageSize: pageSize,
 				filter: a => !a.IsDeleted,
-				orderBy: q => q.OrderByDescending(a => a.CreatedAt)
+				orderBy: q => q.OrderByDescending(a => a.HolidayDate)
 			);
 
 			var mappedItems = _mapper.Map<IEnumerable<HolidayResponseDto>>(items);

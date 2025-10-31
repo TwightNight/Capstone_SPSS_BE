@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using SPSS.BusinessObject.DTOs.Holiday;
+using SPSS.Shared.DTOs.Holiday;
 using SPSS.BusinessObject.Models;
 using System;
 using System.Collections.Generic;

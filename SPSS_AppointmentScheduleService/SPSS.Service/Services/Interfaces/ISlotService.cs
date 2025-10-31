@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Query;
-using SPSS.BusinessObject.DTOs.Slot;
+using SPSS.Shared.DTOs.Holiday;
+using SPSS.Shared.DTOs.Slot;
 using SPSS.BusinessObject.Models;
 using System;
 using System.Collections.Generic;
@@ -13,13 +14,9 @@ namespace SPSS.Service.Services.Interfaces
 	public interface ISlotService
 	{
 		Task<SlotResponse?> GetByIdAsync(Guid id);
-		Task<SlotResponse?> GetByIdAsync(
-			Guid id,
-			Func<IQueryable<Slot>, IIncludableQueryable<Slot, object>>? include = null);
 		Task<IEnumerable<SlotResponse>> GetAllAsync();
-		Task<IEnumerable<SlotResponse>> GetAsync(
-			Expression<Func<Slot, bool>>? filter = null,
-			Func<IQueryable<Slot>, IOrderedQueryable<Slot>>? orderBy = null,
-			Func<IQueryable<Slot>, IIncludableQueryable<Slot, object>>? include = null);
+		Task<SlotResponse> CreateAsync(PostSlotRequest request, Guid userId);
+		Task<SlotResponse?> UpdateAsync(Guid id, Guid userId,PutSlotRequest request);
+		Task<bool> DeleteAsync(Guid id);
 	}
 }
