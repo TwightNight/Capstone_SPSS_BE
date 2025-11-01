@@ -24,7 +24,7 @@ public class BlogMappingProfile : Profile
         // --- Blog Mappings ---
         CreateMap<Blog, BlogDto>()
             .ForMember(dest => dest.AuthorName,
-                       opt => opt.MapFrom(src => $"{src.User.SurName} {src.User.LastName}"));
+                       opt => opt.MapFrom(src => $"{src.User.SurName} {src.User.FirstName}"));
 
         CreateMap<Blog, BlogWithDetailDto>()
             .ForMember(dest => dest.Author,

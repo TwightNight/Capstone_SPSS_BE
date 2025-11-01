@@ -24,15 +24,13 @@ public partial class User
     [Required]
     public string UserName { get; set; }
 
-    [Required]
-    [StringLength(100)]
-    public string SurName { get; set; }
+	[StringLength(100)]
+	public string SurName { get; set; }
 
-    [Required]
-    [StringLength(100)]
-    public string LastName { get; set; }
+	[StringLength(100)]
+	public string FirstName { get; set; }
 
-    [Required]
+	[Required]
     [StringLength(100)]
     public string EmailAddress { get; set; }
 
