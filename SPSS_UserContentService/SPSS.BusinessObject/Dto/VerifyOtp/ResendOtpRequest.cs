@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SPSS.Shared.Constants;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 namespace SPSS.BusinessObject.Dto.VerifyOtp;
 public class ResendOtpRequest
 {
-	[Required(ErrorMessage = "Email is required.")]
-	public string Email { get; set; }
+    [Required(ErrorMessage = ExceptionMessageConstants.Validation.EmailIsRequired)]
+    public string Email { get; set; }
 }
 

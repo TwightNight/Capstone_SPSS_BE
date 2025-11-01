@@ -1,54 +1,37 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using SPSS.Shared.Constants; // Thêm using này
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SPSS.BusinessObject.Dto.Address;
 
 public class AddressForUpdateDto
 {
-    [Required(ErrorMessage = "CountryId is required.")]
     public int CountryId { get; set; }
 
-    [Required(ErrorMessage = "Customer name is required.")]
-    [StringLength(200, ErrorMessage = "Customer name cannot exceed 200 characters.")]
+    [StringLength(200, ErrorMessage = ExceptionMessageConstants.Validation.CustomerNameTooLong)]
     public string CustomerName { get; set; } = null!;
 
-    [Required(ErrorMessage = "Phone number is required.")]
-    [StringLength(20, ErrorMessage = "Phone number cannot exceed 20 characters.")]
-    [Phone(ErrorMessage = "Invalid phone number format.")]
+    [StringLength(20, ErrorMessage = ExceptionMessageConstants.Validation.PhoneNumberTooLong)]
+    [Phone(ErrorMessage = ExceptionMessageConstants.Validation.InvalidPhoneFormat)]
     public string PhoneNumber { get; set; } = null!;
 
-    // Lưu ý: IsDefault thường được xử lý thông qua một endpoint riêng
-    // để tránh logic phức tạp, nên tôi sẽ không thêm nó vào đây
-    // nếu bạn cần, bạn có thể thêm: public bool IsDefault { get; set; }
-
-    [Required(ErrorMessage = "Street number is required.")]
-    [StringLength(50, ErrorMessage = "Street number cannot exceed 50 characters.")]
+    [StringLength(50, ErrorMessage = ExceptionMessageConstants.Validation.StreetNumberTooLong)]
     public string StreetNumber { get; set; } = null!;
 
-    [Required(ErrorMessage = "AddressLine1 is required.")]
-    [StringLength(200, ErrorMessage = "AddressLine1 cannot exceed 200 characters.")]
+    [StringLength(200, ErrorMessage = ExceptionMessageConstants.Validation.AddressLine1TooLong)]
     public string AddressLine1 { get; set; } = null!;
 
-    [StringLength(200, ErrorMessage = "AddressLine2 cannot exceed 200 characters.")]
+    [StringLength(200, ErrorMessage = ExceptionMessageConstants.Validation.AddressLine2TooLong)]
     public string? AddressLine2 { get; set; }
 
-    [Required(ErrorMessage = "City is required.")]
-    [StringLength(100, ErrorMessage = "City cannot exceed 100 characters.")]
+    [StringLength(100, ErrorMessage = ExceptionMessageConstants.Validation.CityTooLong)]
     public string City { get; set; } = null!;
 
-    [Required(ErrorMessage = "Ward is required.")]
-    [StringLength(100, ErrorMessage = "Ward cannot exceed 100 characters.")]
+    [StringLength(100, ErrorMessage = ExceptionMessageConstants.Validation.WardTooLong)]
     public string Ward { get; set; } = null!;
 
-    [Required(ErrorMessage = "Postcode is required.")]
-    [StringLength(20, ErrorMessage = "Postcode cannot exceed 20 characters.")]
+    [StringLength(20, ErrorMessage = ExceptionMessageConstants.Validation.PostcodeTooLong)]
     public string Postcode { get; set; } = null!;
 
-    [Required(ErrorMessage = "Province is required.")]
-    [StringLength(100, ErrorMessage = "Province cannot exceed 100 characters.")]
+    [StringLength(100, ErrorMessage = ExceptionMessageConstants.Validation.ProvinceTooLong)]
     public string Province { get; set; } = null!;
 }

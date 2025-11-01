@@ -1,69 +1,66 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using SPSS.Shared.Constants;
+using System;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SPSS.BusinessObject.Dto.User;
 
 public class UserForCreationDto
 {
-    [Required(ErrorMessage = "Role ID is required.")]
+    [Required(ErrorMessage = ExceptionMessageConstants.Validation.RoleIdIsRequired)]
     public Guid? RoleId { get; set; }
 
-    [Required(ErrorMessage = "Status is required.")]
+    [Required(ErrorMessage = ExceptionMessageConstants.Validation.StatusIsRequired)]
     public string Status { get; set; }
 
     // Login Credentials
-    [Required(ErrorMessage = "Username is required.")]
-    [MinLength(3, ErrorMessage = "Username must be at least 3 characters.")]
+    [Required(ErrorMessage = ExceptionMessageConstants.Validation.UsernameIsRequiredForRegister)]
+    [MinLength(3, ErrorMessage = ExceptionMessageConstants.Validation.UsernameMinLength)]
     public string UserName { get; set; }
 
-    [Required(ErrorMessage = "Password is required.")]
-    [MinLength(8, ErrorMessage = "Password must be at least 8 characters.")]
+    [Required(ErrorMessage = ExceptionMessageConstants.Validation.PasswordIsRequired)]
+    [MinLength(8, ErrorMessage = ExceptionMessageConstants.Validation.PasswordMinLength)]
     [DataType(DataType.Password)]
     public string Password { get; set; }
 
     // Basic Information
-    [StringLength(100, ErrorMessage = "Surname cannot exceed 100 characters.")]
+    [StringLength(100, ErrorMessage = ExceptionMessageConstants.Validation.SurNameTooLong)]
     public string SurName { get; set; }
 
-    [StringLength(100, ErrorMessage = "Last name cannot exceed 100 characters.")]
+    [StringLength(100, ErrorMessage = ExceptionMessageConstants.Validation.LastNameTooLong)]
     public string LastName { get; set; }
 
-    [Required(ErrorMessage = "Email address is required.")]
-    [StringLength(100, ErrorMessage = "Email address cannot exceed 100 characters.")]
-    [EmailAddress(ErrorMessage = "Invalid email address format.")]
+    [Required(ErrorMessage = ExceptionMessageConstants.Validation.EmailIsRequired)]
+    [StringLength(100, ErrorMessage = ExceptionMessageConstants.Validation.EmailTooLong)]
+    [EmailAddress(ErrorMessage = ExceptionMessageConstants.Validation.InvalidEmailFormat)]
     public string EmailAddress { get; set; }
 
-    [Required(ErrorMessage = "Phone number is required.")]
-    [StringLength(20, ErrorMessage = "Phone number cannot exceed 20 characters.")]
-    [Phone(ErrorMessage = "Invalid phone number format.")]
+    [Required(ErrorMessage = ExceptionMessageConstants.Validation.PhoneNumberIsRequired)]
+    [StringLength(20, ErrorMessage = ExceptionMessageConstants.Validation.PhoneNumberTooLong)]
+    [Phone(ErrorMessage = ExceptionMessageConstants.Validation.InvalidPhoneFormat)]
     public string PhoneNumber { get; set; }
 
-    [StringLength(500, ErrorMessage = "Avatar URL cannot exceed 500 characters.")]
-    [Url(ErrorMessage = "Invalid URL format.")]
+    [StringLength(500, ErrorMessage = ExceptionMessageConstants.Validation.AvatarUrlTooLong)]
+    [Url(ErrorMessage = ExceptionMessageConstants.Validation.InvalidUrlFormat)]
     public string? AvatarUrl { get; set; }
 
     // Personal/Dermatological Information (optional)
     public Guid? SkinTypeId { get; set; }
     public Guid? SkinConditionId { get; set; }
 
-    [Range(1, 150, ErrorMessage = "Age must be between 1 and 150.")]
+    [Range(1, 150, ErrorMessage = ExceptionMessageConstants.Validation.InvalidAgeRange)]
     public int? Age { get; set; }
 
     public DateTime? DoB { get; set; }
 
-    [StringLength(1000, ErrorMessage = "Diet description cannot exceed 1000 characters.")]
+    [StringLength(1000, ErrorMessage = ExceptionMessageConstants.Validation.DietTooLong)]
     public string? Diet { get; set; }
 
-    [StringLength(1000, ErrorMessage = "Daily routine description cannot exceed 1000 characters.")]
+    [StringLength(1000, ErrorMessage = ExceptionMessageConstants.Validation.DailyRoutineTooLong)]
     public string? DailyRoutine { get; set; }
 
-    [StringLength(1000, ErrorMessage = "Allergy information cannot exceed 1000 characters.")]
+    [StringLength(1000, ErrorMessage = ExceptionMessageConstants.Validation.AllergyTooLong)]
     public string? Allergy { get; set; }
 
-    [StringLength(1000, ErrorMessage = "Certificate information cannot exceed 1000 characters.")]
+    [StringLength(1000, ErrorMessage = ExceptionMessageConstants.Validation.CertificateTooLong)]
     public string? Certificate { get; set; }
 }

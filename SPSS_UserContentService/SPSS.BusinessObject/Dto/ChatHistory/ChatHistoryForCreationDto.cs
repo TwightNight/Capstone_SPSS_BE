@@ -1,26 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using SPSS.Shared.Constants;
+using System;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SPSS.BusinessObject.Dto.ChatHistory;
 
 public class ChatHistoryForCreationDto
 {
-    [Required(ErrorMessage = "User ID is required.")]
+    [Required(ErrorMessage = ExceptionMessageConstants.Validation.UserIdIsRequired)]
     public Guid UserId { get; set; }
 
-    [Required(ErrorMessage = "Message content is required.")]
-    [StringLength(4000, ErrorMessage = "Message content cannot exceed 4000 characters.")]
+    [Required(ErrorMessage = ExceptionMessageConstants.Validation.MessageContentIsRequired)]
+    [StringLength(4000, ErrorMessage = ExceptionMessageConstants.Validation.MessageContentTooLong)]
     public string MessageContent { get; set; }
 
-    [Required(ErrorMessage = "Sender type is required.")]
-    [RegularExpression("^(User|Bot)$", ErrorMessage = "Sender type must be either 'User' or 'Bot'.")]
+    [Required(ErrorMessage = ExceptionMessageConstants.Validation.SenderTypeIsRequired)]
+    [RegularExpression("^(User|Bot)$", ErrorMessage = ExceptionMessageConstants.Validation.InvalidSenderType)]
     public string SenderType { get; set; }
 
-    [Required(ErrorMessage = "Session ID is required.")]
-    [StringLength(100, ErrorMessage = "Session ID cannot exceed 100 characters.")]
+    [Required(ErrorMessage = ExceptionMessageConstants.Validation.SessionIdIsRequired)]
+    [StringLength(100, ErrorMessage = ExceptionMessageConstants.Validation.SessionIdTooLong)]
     public string SessionId { get; set; }
 }

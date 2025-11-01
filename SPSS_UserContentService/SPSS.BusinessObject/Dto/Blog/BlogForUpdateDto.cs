@@ -1,28 +1,21 @@
 ﻿using SPSS.BusinessObject.Dto.BlogSection;
-using System;
+using SPSS.Shared.Constants; // Thêm using này
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SPSS.BusinessObject.Dto.Blog;
 
 public class BlogForUpdateDto
 {
-    [Required(ErrorMessage = "Title is required.")]
-    [StringLength(200, ErrorMessage = "Title cannot exceed 200 characters.")]
+    [StringLength(200, ErrorMessage = ExceptionMessageConstants.Validation.TitleTooLong)]
     public string Title { get; set; } = null!;
 
-    [Required(ErrorMessage = "Description is required.")]
     public string Description { get; set; } = null!;
 
-    [Required(ErrorMessage = "Thumbnail URL is required.")]
-    [StringLength(500, ErrorMessage = "Thumbnail URL cannot exceed 500 characters.")]
-    [Url(ErrorMessage = "The Thumbnail must be a valid URL.")]
+    [StringLength(500, ErrorMessage = ExceptionMessageConstants.Validation.ThumbnailUrlTooLong)]
+    [Url(ErrorMessage = ExceptionMessageConstants.Validation.InvalidThumbnailUrl)]
     public string Thumbnail { get; set; } = null!;
 
-    [Required(ErrorMessage = "Blog sections are required.")]
-    [MinLength(1, ErrorMessage = "At least one section is required.")]
+    [MinLength(1, ErrorMessage = ExceptionMessageConstants.Validation.AtLeastOneSectionIsRequired)]
     public List<BlogSectionForUpdateDto> Sections { get; set; } = new();
 }

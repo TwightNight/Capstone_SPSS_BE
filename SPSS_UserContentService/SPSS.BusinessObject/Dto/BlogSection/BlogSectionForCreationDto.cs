@@ -1,25 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using SPSS.Shared.Constants; // Thêm using này
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SPSS.BusinessObject.Dto.BlogSection;
 
 public class BlogSectionForCreationDto
 {
-    [Required(ErrorMessage = "Content type is required.")]
-    [StringLength(50, ErrorMessage = "Content type cannot exceed 50 characters.")]
+    [Required(ErrorMessage = ExceptionMessageConstants.Validation.ContentTypeIsRequired)]
+    [StringLength(50, ErrorMessage = ExceptionMessageConstants.Validation.ContentTypeTooLong)]
     public string ContentType { get; set; } = null!;
 
-    [Required(ErrorMessage = "Subtitle is required.")]
-    [StringLength(200, ErrorMessage = "Subtitle cannot exceed 200 characters.")]
+    [Required(ErrorMessage = ExceptionMessageConstants.Validation.SubtitleIsRequired)]
+    [StringLength(200, ErrorMessage = ExceptionMessageConstants.Validation.SubtitleTooLong)]
     public string Subtitle { get; set; } = null!;
 
-    [Required(ErrorMessage = "Content is required.")]
+    [Required(ErrorMessage = ExceptionMessageConstants.Validation.ContentIsRequired)]
     public string Content { get; set; } = null!;
 
-    [Range(0, int.MaxValue, ErrorMessage = "Order must be a non-negative number.")]
+    [Range(0, int.MaxValue, ErrorMessage = ExceptionMessageConstants.Validation.OrderMustBeNonNegative)]
     public int Order { get; set; }
 }

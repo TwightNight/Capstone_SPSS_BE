@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SPSS.Shared.Constants;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -9,11 +10,9 @@ namespace SPSS.BusinessObject.Dto.Country;
 
 public class CountryForUpdateDto
 {
-    [Required(ErrorMessage = "Country code is required.")]
-    [StringLength(10, ErrorMessage = "Country code cannot exceed 10 characters.")]
+    [StringLength(10, ErrorMessage = ExceptionMessageConstants.Validation.CountryCodeTooLong)]
     public string CountryCode { get; set; } = null!;
 
-    [Required(ErrorMessage = "Country name is required.")]
-    [StringLength(100, ErrorMessage = "Country name cannot exceed 100 characters.")]
+    [StringLength(100, ErrorMessage = ExceptionMessageConstants.Validation.CountryNameTooLong)]
     public string CountryName { get; set; } = null!;
 }

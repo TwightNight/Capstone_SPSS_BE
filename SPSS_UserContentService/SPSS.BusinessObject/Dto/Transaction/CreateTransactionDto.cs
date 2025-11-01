@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SPSS.Shared.Constants;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -9,16 +10,14 @@ namespace SPSS.BusinessObject.Dto.Transaction;
 
 public class CreateTransactionDto
 {
-    [Required(ErrorMessage = "Transaction type is required.")]
-    // Example: Enforce specific transaction types for data integrity.
-    // Adjust "Deposit" and "Withdrawal" to your actual required values.
-    [RegularExpression("^(Deposit|Withdrawal)$", ErrorMessage = "Transaction type must be either 'Deposit' or 'Withdrawal'.")]
+    [Required(ErrorMessage = ExceptionMessageConstants.Validation.TransactionTypeIsRequired)]
+    [RegularExpression("^(Deposit|Withdrawal)$", ErrorMessage = ExceptionMessageConstants.Validation.InvalidTransactionType)]
     public string TransactionType { get; set; }
 
-    [Required(ErrorMessage = "Amount is required.")]
-    [Range(1000, (double)decimal.MaxValue, ErrorMessage = "Amount must be at least 1000.")]
+    [Required(ErrorMessage = ExceptionMessageConstants.Validation.AmountIsRequired)]
+    [Range(1000, (double)decimal.MaxValue, ErrorMessage = ExceptionMessageConstants.Validation.AmountMustBeAtLeast1000)]
     public decimal Amount { get; set; }
 
-    [StringLength(500, ErrorMessage = "Description cannot exceed 500 characters.")]
-    public string? Description { get; set; } // Changed to nullable string for clarity
+    [StringLength(500, ErrorMessage = ExceptionMessageConstants.Validation.DescriptionTooLong500)]
+    public string? Description { get; set; }
 }

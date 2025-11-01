@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SPSS.Shared.Constants;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -10,10 +11,9 @@ namespace SPSS.BusinessObject.Dto.Role;
 // DTO để cập nhật (Update) Role
 public class RoleForUpdateDto
 {
-    [Required(ErrorMessage = "Role name is required")]
-    [MaxLength(100, ErrorMessage = "Role name cannot exceed 100 characters")]
+    [MaxLength(100, ErrorMessage = ExceptionMessageConstants.Validation.RoleNameTooLong)]
     public string RoleName { get; set; }
 
-    [MaxLength(500, ErrorMessage = "Description cannot exceed 500 characters")]
+    [MaxLength(500, ErrorMessage = ExceptionMessageConstants.Validation.DescriptionTooLong500)]
     public string Description { get; set; }
 }
