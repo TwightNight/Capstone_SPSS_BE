@@ -24,4 +24,8 @@
 		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.10" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <ProjectReference Include="..\SPSS.Shared\SPSS.Shared.csproj" />
+	</ItemGroup>
+
 </Project>

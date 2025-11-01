@@ -1,17 +1,18 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using SPSS.Shared.Constants;
+using System.ComponentModel.DataAnnotations;
 
 namespace SPSS.BusinessObject.Dto.SkinCondition;
 
 public class SkinConditionForCreationDto
 {
-    [Required(ErrorMessage = "Name is required.")]
-    [StringLength(200, ErrorMessage = "Name cannot exceed 200 characters.")]
+    [Required(ErrorMessage = ExceptionMessageConstants.Validation.SkinConditionNameIsRequired)]
+    [StringLength(200, ErrorMessage = ExceptionMessageConstants.Validation.SkinConditionNameTooLong)]
     public string Name { get; set; }
 
-    [StringLength(1000, ErrorMessage = "Description cannot exceed 1000 characters.")]
-    public string? Description { get; set; } // Changed to nullable string for clarity
+    [StringLength(1000, ErrorMessage = ExceptionMessageConstants.Validation.DescriptionTooLong1000)]
+    public string? Description { get; set; }
 
-    [Range(1, 10, ErrorMessage = "Severity level must be between 1 and 10.")]
+    [Range(1, 10, ErrorMessage = ExceptionMessageConstants.Validation.InvalidSeverityLevelRange)]
     public int? SeverityLevel { get; set; }
 
     public bool? IsChronic { get; set; }

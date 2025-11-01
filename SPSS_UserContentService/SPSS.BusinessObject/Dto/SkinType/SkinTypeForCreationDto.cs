@@ -1,13 +1,14 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using SPSS.Shared.Constants;
+using System.ComponentModel.DataAnnotations;
 
 namespace SPSS.BusinessObject.Dto.SkinType;
 
 public class SkinTypeForCreationDto
 {
-    [Required(ErrorMessage = "Skin type name is required.")]
-    [StringLength(100, ErrorMessage = "Skin type name cannot exceed 100 characters.")]
+    [Required(ErrorMessage = ExceptionMessageConstants.Validation.SkinTypeNameIsRequired)]
+    [StringLength(100, ErrorMessage = ExceptionMessageConstants.Validation.SkinTypeNameTooLong)]
     public string Name { get; set; }
 
-    [StringLength(500, ErrorMessage = "Description cannot exceed 500 characters.")]
+    [StringLength(500, ErrorMessage = ExceptionMessageConstants.Validation.DescriptionTooLong500)]
     public string Description { get; set; }
 }

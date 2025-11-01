@@ -1,19 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using SPSS.Shared.Constants;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SPSS.BusinessObject.Dto.Role;
 
-// DTO để tạo mới (Create) Role
 public class RoleForCreationDto
 {
-    [Required(ErrorMessage = "Role name is required")]
-    [MaxLength(100, ErrorMessage = "Role name cannot exceed 100 characters")]
+    [Required(ErrorMessage = ExceptionMessageConstants.Validation.RoleNameIsRequired)]
+    [MaxLength(100, ErrorMessage = ExceptionMessageConstants.Validation.RoleNameTooLong)]
     public string RoleName { get; set; }
 
-    [MaxLength(500, ErrorMessage = "Description cannot exceed 500 characters")]
+    [MaxLength(500, ErrorMessage = ExceptionMessageConstants.Validation.DescriptionTooLong500)]
     public string Description { get; set; }
 }
