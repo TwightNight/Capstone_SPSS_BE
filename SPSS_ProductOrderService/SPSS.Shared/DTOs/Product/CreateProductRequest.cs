@@ -1,34 +1,31 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SPSS.Shared.Constants;
 
 namespace SPSS.Shared.DTOs.Product
 {
     public class CreateProductRequest
     {
-        [Required(ErrorMessage = "Product name is required.")]
-        [StringLength(255, ErrorMessage = "Product name cannot be longer than 255 characters.")]
+        [Required(ErrorMessage = ExceptionMessageConstants.Product.NameRequired)]
+        [StringLength(255, ErrorMessage = ExceptionMessageConstants.Product.NameTooLong)]
         public string Name { get; set; }
 
-        [StringLength(255, ErrorMessage = "English name cannot be longer than 255 characters.")]
+        [StringLength(255, ErrorMessage = ExceptionMessageConstants.Product.EnglishNameTooLong)]
         public string EnglishName { get; set; }
 
-        [Required(ErrorMessage = "Description is required.")]
+        [Required(ErrorMessage = ExceptionMessageConstants.Product.DescriptionRequired)]
         public string Description { get; set; }
 
-        [Required(ErrorMessage = "Price is required.")]
-        [Range(0, double.MaxValue, ErrorMessage = "Price must be a positive number.")]
+        [Required(ErrorMessage = ExceptionMessageConstants.Product.PriceRequired)]
+        [Range(0, double.MaxValue, ErrorMessage = ExceptionMessageConstants.Product.PricePositive)]
         public decimal Price { get; set; }
 
-        [Required(ErrorMessage = "Market price is required.")]
-        [Range(0, double.MaxValue, ErrorMessage = "Market price must be a positive number.")]
+        [Required(ErrorMessage = ExceptionMessageConstants.Product.MarketPriceRequired)]
+        [Range(0, double.MaxValue, ErrorMessage = ExceptionMessageConstants.Product.MarketPricePositive)]
         public decimal MarketPrice { get; set; }
 
-        [Required(ErrorMessage = "Quantity in stock is required.")]
-        [Range(0, int.MaxValue, ErrorMessage = "Quantity in stock cannot be negative.")]
+        [Required(ErrorMessage = ExceptionMessageConstants.Product.QuantityInStockRequired)]
+        [Range(0, int.MaxValue, ErrorMessage = ExceptionMessageConstants.Product.QuantityInStockNonNegative)]
         public int QuantityInStock { get; set; }
 
         public Guid? ProductStatusId { get; set; }

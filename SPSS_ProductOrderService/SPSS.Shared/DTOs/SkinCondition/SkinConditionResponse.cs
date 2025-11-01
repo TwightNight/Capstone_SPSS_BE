@@ -13,5 +13,5 @@ namespace SPSS.Shared.DTOs.SkinCondition
         public string Description { get; set; }
         public int? SeverityLevel { get; set; }
         public bool? IsChronic { get; set; }
-    }
+    }   
 }

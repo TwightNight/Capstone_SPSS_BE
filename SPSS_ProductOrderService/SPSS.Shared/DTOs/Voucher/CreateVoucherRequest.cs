@@ -1,38 +1,35 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SPSS.Shared.Constants;
 
 namespace SPSS.Shared.DTOs.Voucher
 {
     public class CreateVoucherRequest
     {
-        [Required(ErrorMessage = "Voucher code is required.")]
-        [StringLength(100, ErrorMessage = "Voucher code cannot be longer than 100 characters.")]
+        [Required(ErrorMessage = ExceptionMessageConstants.Voucher.CodeRequired)]
+        [StringLength(100, ErrorMessage = ExceptionMessageConstants.Voucher.CodeTooLong)]
         public string Code { get; set; }
 
-        [Required(ErrorMessage = "Description is required.")]
-        [StringLength(500, ErrorMessage = "Description cannot be longer than 500 characters.")]
+        [Required(ErrorMessage = ExceptionMessageConstants.Voucher.DescriptionRequired)]
+        [StringLength(500, ErrorMessage = ExceptionMessageConstants.Voucher.DescriptionTooLong)]
         public string Description { get; set; }
 
-        [Required(ErrorMessage = "Discount rate is required.")]
-        [Range(0, 100, ErrorMessage = "Discount rate must be between 0 and 100.")]
+        [Required(ErrorMessage = ExceptionMessageConstants.Voucher.DiscountRateRequired)]
+        [Range(0, 100, ErrorMessage = ExceptionMessageConstants.Voucher.DiscountRateOutOfRange)]
         public double DiscountRate { get; set; }
 
-        [Required(ErrorMessage = "Minimum order value is required.")]
-        [Range(0, double.MaxValue, ErrorMessage = "Minimum order value must be a positive number.")]
+        [Required(ErrorMessage = ExceptionMessageConstants.Voucher.MinimumOrderValueRequired)]
+        [Range(0, double.MaxValue, ErrorMessage = ExceptionMessageConstants.Voucher.MinimumOrderValuePositive)]
         public double MinimumOrderValue { get; set; }
 
-        [Required(ErrorMessage = "Start date is required.")]
+        [Required(ErrorMessage = ExceptionMessageConstants.Voucher.StartDateRequired)]
         public DateTimeOffset StartDate { get; set; }
 
-        [Required(ErrorMessage = "End date is required.")]
+        [Required(ErrorMessage = ExceptionMessageConstants.Voucher.EndDateRequired)]
         public DateTimeOffset EndDate { get; set; }
 
-        [Required(ErrorMessage = "Usage limit is required.")]
-        [Range(1, int.MaxValue, ErrorMessage = "Usage limit must be at least 1.")]
+        [Required(ErrorMessage = ExceptionMessageConstants.Voucher.UsageLimitRequired)]
+        [Range(1, int.MaxValue, ErrorMessage = ExceptionMessageConstants.Voucher.UsageLimitAtLeastOne)]
         public int UsageLimit { get; set; }
     }
 }

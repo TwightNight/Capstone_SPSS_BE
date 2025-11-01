@@ -3,7 +3,6 @@ using Microsoft.IdentityModel.Tokens;
 using Ocelot.Cache.CacheManager;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
-using SPSS.ApiGateway.Middleware; 
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -53,7 +52,6 @@ builder.Services.AddSwaggerForOcelot(builder.Configuration);
 var app = builder.Build();
 
 app.UseCors();
-app.UseMiddleware<AttachSignatureToRequest>(); 
 
 app.UseAuthentication();
 app.UseAuthorization();
