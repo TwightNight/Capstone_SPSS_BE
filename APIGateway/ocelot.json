@@ -12,10 +12,6 @@
           "Port": 80
         }
       ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": [ "Admin" ]
-      },
       "SwaggerKey": "user-service"
     },
 
@@ -31,10 +27,6 @@
           "Port": 80
         }
       ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": []
-      },
       "SwaggerKey": "user-service"
     },
 
@@ -50,10 +42,6 @@
           "Port": 80
         }
       ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": []
-      },
       "SwaggerKey": "user-service"
     },
     {
@@ -67,10 +55,6 @@
           "Port": 80
         }
       ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": []
-      },
       "SwaggerKey": "user-service"
     },
     {
@@ -168,10 +152,6 @@
           "Port": 80
         }
       ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": []
-      },
       "SwaggerKey": "user-service"
     },
     {
@@ -185,10 +165,6 @@
           "Port": 80
         }
       ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": []
-      },
       "SwaggerKey": "user-service"
     },
     {
@@ -202,10 +178,6 @@
           "Port": 80
         }
       ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": [ "Admin" ]
-      },
       "SwaggerKey": "user-service"
     },
     {
@@ -219,10 +191,6 @@
           "Port": 80
         }
       ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": [ "Admin" ]
-      },
       "SwaggerKey": "user-service"
     },
 
@@ -251,10 +219,6 @@
           "Port": 80
         }
       ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": [ "Admin" ]
-      },
       "SwaggerKey": "user-service"
     },
     {
@@ -281,10 +245,6 @@
           "Port": 80
         }
       ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": [ "Admin" ]
-      },
       "SwaggerKey": "user-service"
     },
     {
@@ -311,10 +271,6 @@
           "Port": 80
         }
       ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": [ "Admin" ]
-      },
       "SwaggerKey": "user-service"
     },
     {
@@ -341,10 +297,6 @@
           "Port": 80
         }
       ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": [ "Admin" ]
-      },
       "SwaggerKey": "user-service"
     },
 
@@ -360,10 +312,6 @@
           "Port": 80
         }
       ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": []
-      },
       "SwaggerKey": "user-service"
     },
     {
@@ -377,10 +325,6 @@
           "Port": 80
         }
       ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": []
-      },
       "SwaggerKey": "user-service"
     },
 
@@ -396,10 +340,6 @@
           "Port": 80
         }
       ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": [ "Admin" ]
-      },
       "SwaggerKey": "user-service"
     },
     {
@@ -413,10 +353,6 @@
           "Port": 80
         }
       ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": []
-      },
       "SwaggerKey": "user-service"
     },
     {
@@ -430,10 +366,6 @@
           "Port": 80
         }
       ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": [ "Admin" ]
-      },
       "SwaggerKey": "user-service"
     }
   ],

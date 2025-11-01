@@ -1,12 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
+using SPSS.Shared.Constants;
 
 namespace SPSS.Shared.DTOs.ProductStatus
 {
-    internal class CreateProductStatusRequest
+    public class CreateProductStatusRequest
     {
+        [Required(ErrorMessage = ExceptionMessageConstants.ProductStatus.StatusNameRequired)]
+        [StringLength(100, ErrorMessage = ExceptionMessageConstants.ProductStatus.StatusNameTooLong)]
+        public string StatusName { get; set; }
+
+        [Required(ErrorMessage = ExceptionMessageConstants.ProductStatus.DescriptionRequired)]
+        [StringLength(500, ErrorMessage = ExceptionMessageConstants.ProductStatus.DescriptionTooLong)]
+        public string Description { get; set; }
     }
 }

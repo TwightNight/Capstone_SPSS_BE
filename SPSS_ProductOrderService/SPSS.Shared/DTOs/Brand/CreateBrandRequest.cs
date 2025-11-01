@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SPSS.Shared.Constants;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -9,24 +10,24 @@ namespace SPSS.Shared.DTOs.Brand
 {
     public class CreateBrandRequest
     {
-        [Required(ErrorMessage = "Brand name is required.")]
-        [StringLength(100, ErrorMessage = "Brand name cannot be longer than 100 characters.")]
+        [Required(ErrorMessage = ExceptionMessageConstants.Brand.NameRequired)]
+        [StringLength(100, ErrorMessage = ExceptionMessageConstants.Brand.NameTooLong)]
         public string Name { get; set; }
 
-        [Required(ErrorMessage = "Title is required.")]
-        [StringLength(200, ErrorMessage = "Title cannot be longer than 200 characters.")]
+        [Required(ErrorMessage = ExceptionMessageConstants.Brand.TitleRequired)]
+        [StringLength(200, ErrorMessage = ExceptionMessageConstants.Brand.TitleTooLong)]
         public string Title { get; set; }
 
-        [Required(ErrorMessage = "Description is required.")]
-        [StringLength(500, ErrorMessage = "Description cannot be longer than 500 characters.")]
+        [Required(ErrorMessage = ExceptionMessageConstants.Brand.DescriptionRequired)]
+        [StringLength(500, ErrorMessage = ExceptionMessageConstants.Brand.DescriptionTooLong)]
         public string Description { get; set; }
 
-        [Required(ErrorMessage = "Image URL is required.")]
-        [StringLength(500, ErrorMessage = "Image URL cannot be longer than 500 characters.")]
-        [Url(ErrorMessage = "A valid URL is required for the image.")]
+        [Required(ErrorMessage = ExceptionMessageConstants.Brand.ImageUrlRequired)]
+        [StringLength(500, ErrorMessage = ExceptionMessageConstants.Brand.ImageUrlTooLong)]
+        [Url(ErrorMessage = ExceptionMessageConstants.Brand.ImageUrlInvalid)]
         public string ImageUrl { get; set; }
 
-        [Required(ErrorMessage = "Country ID is required.")]
+        [Required(ErrorMessage = ExceptionMessageConstants.Brand.CountryIdRequired)]
         public int CountryId { get; set; }
     }
 }

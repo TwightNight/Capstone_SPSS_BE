@@ -1,12 +1,21 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
+using SPSS.Shared.Constants;
 
 namespace SPSS.Shared.DTOs.SkinCondition
 {
-    internal class CreateSkinConditionRequest
+    public class CreateSkinConditionRequest
     {
+        [Required(ErrorMessage = ExceptionMessageConstants.SkinCondition.NameRequired)]
+        [StringLength(200, ErrorMessage = ExceptionMessageConstants.SkinCondition.NameTooLong)]
+        public string Name { get; set; }
+
+        [StringLength(1000, ErrorMessage = ExceptionMessageConstants.SkinCondition.DescriptionTooLong)]
+        public string Description { get; set; }
+
+        [Range(1, 10, ErrorMessage = ExceptionMessageConstants.SkinCondition.SeverityRange)]
+        public int? SeverityLevel { get; set; }
+
+        public bool? IsChronic { get; set; }
     }
 }

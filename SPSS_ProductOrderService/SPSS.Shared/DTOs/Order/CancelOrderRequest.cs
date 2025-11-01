@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SPSS.Shared.Constants;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -9,7 +10,7 @@ namespace SPSS.Shared.DTOs.Order
 {
     public class CancelOrderRequest
     {
-        [Required(ErrorMessage = "The cancellation reason ID is required.")]
+        [Required(ErrorMessage = ExceptionMessageConstants.Order.CancelReasonIdRequired)]
         public Guid CancelReasonId { get; set; }
     }
 }

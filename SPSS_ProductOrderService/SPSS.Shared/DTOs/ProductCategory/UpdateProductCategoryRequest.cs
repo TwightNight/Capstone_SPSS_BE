@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SPSS.Shared.Constants;
 
 namespace SPSS.Shared.DTOs.ProductCategory
 {
@@ -11,7 +8,7 @@ namespace SPSS.Shared.DTOs.ProductCategory
     {
         public Guid? ParentCategoryId { get; set; }
 
-        [StringLength(100, ErrorMessage = "The category name cannot exceed 100 characters.")]
+        [StringLength(100, ErrorMessage = ExceptionMessageConstants.ProductCategory.CategoryNameTooLong)]
         public string CategoryName { get; set; }
     }
 }

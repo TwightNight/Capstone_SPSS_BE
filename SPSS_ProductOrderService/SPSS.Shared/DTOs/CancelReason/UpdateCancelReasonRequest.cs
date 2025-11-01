@@ -1,18 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
+using SPSS.Shared.Constants;
 
 namespace SPSS.Shared.DTOs.CancelReason
 {
     public class UpdateCancelReasonRequest
     {
-        [StringLength(500, ErrorMessage = "Description cannot be longer than 500 characters.")]
+        [StringLength(500, ErrorMessage = ExceptionMessageConstants.CancelReason.DescriptionTooLong)]
         public string Description { get; set; }
 
-        [Range(0, 100, ErrorMessage = "Refund rate must be between 0 and 100.")]
+        [Range(0, 100, ErrorMessage = ExceptionMessageConstants.CancelReason.RefundRateOutOfRange)]
         public decimal? RefundRate { get; set; }
     }
 }
