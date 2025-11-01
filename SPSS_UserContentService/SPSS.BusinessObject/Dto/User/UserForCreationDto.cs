@@ -26,11 +26,9 @@ public class UserForCreationDto
     public string Password { get; set; }
 
     // Basic Information
-    [Required(ErrorMessage = "Surname is required.")]
     [StringLength(100, ErrorMessage = "Surname cannot exceed 100 characters.")]
     public string SurName { get; set; }
 
-    [Required(ErrorMessage = "Last name is required.")]
     [StringLength(100, ErrorMessage = "Last name cannot exceed 100 characters.")]
     public string LastName { get; set; }
 

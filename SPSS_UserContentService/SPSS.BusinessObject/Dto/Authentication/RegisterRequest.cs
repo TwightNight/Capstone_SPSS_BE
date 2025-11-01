@@ -27,12 +27,4 @@ public class RegisterRequest
     [MinLength(8, ErrorMessage = "Password must be at least 8 characters long.")]
     [DataType(DataType.Password)]
     public string Password { get; set; }
-
-    [Required(ErrorMessage = "Surname is required.")]
-    [StringLength(100, ErrorMessage = "Surname cannot exceed 100 characters.")]
-    public string SurName { get; set; }
-
-    [Required(ErrorMessage = "Last name is required.")]
-    [StringLength(100, ErrorMessage = "Last name cannot exceed 100 characters.")]
-    public string LastName { get; set; }
 }
