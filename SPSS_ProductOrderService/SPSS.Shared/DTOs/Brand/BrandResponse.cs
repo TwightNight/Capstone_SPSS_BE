@@ -1,4 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace SPSS.Shared.DTOs.Brand
 {
@@ -10,6 +14,6 @@ namespace SPSS.Shared.DTOs.Brand
         public string Description { get; set; }
         public string ImageUrl { get; set; }
         public int CountryId { get; set; }
-        public string? CountryName { get; set; }
+        public string CountryName { get; set; } // Flattened property
     }
 }

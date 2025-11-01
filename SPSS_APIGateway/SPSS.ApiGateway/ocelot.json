@@ -1,7 +1,6 @@
 {
   "Routes": [
     // --- Roles Controller ---
-    // Giả định Roles là CRUD đơn giản, cần quyền Admin
     {
       "UpstreamPathTemplate": "/api/roles/{everything}",
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
@@ -17,7 +16,6 @@
     },
 
     // --- Account Controller ---
-    // Dành cho người dùng đã đăng nhập để quản lý tài khoản của họ
     {
       "UpstreamPathTemplate": "/api/account/{everything}",
       "UpstreamHttpMethod": [ "GET", "PUT", "PATCH" ],
@@ -32,9 +30,9 @@
       "SwaggerKey": "user-service"
     },
 
-    // --- Addresses Controller ---
+    // --- Addresses Controller (ĐÃ SỬA LỖI) ---
     {
-      "UpstreamPathTemplate": "/api/addresses", // Lấy danh sách và tạo mới
+      "UpstreamPathTemplate": "/api/addresses", // GET (danh sách) và POST (tạo mới) cho người dùng đã xác thực
       "UpstreamHttpMethod": [ "GET", "POST" ],
       "DownstreamPathTemplate": "/api/addresses",
       "DownstreamScheme": "http",
@@ -47,9 +45,9 @@
       "SwaggerKey": "user-service"
     },
     {
-      "UpstreamPathTemplate": "/api/addresses/{id}", // Lấy, cập nhật, xóa theo ID
-      "UpstreamHttpMethod": [ "GET", "PUT", "DELETE" ],
-      "DownstreamPathTemplate": "/api/addresses/{id}",
+      "UpstreamPathTemplate": "/api/addresses/{addressId}", // PUT (cập nhật) cho người dùng đã xác thực
+      "UpstreamHttpMethod": [ "PUT" ],
+      "DownstreamPathTemplate": "/api/addresses/{addressId}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -57,6 +55,23 @@
           "Port": 80
         }
       ],
+      "SwaggerKey": "user-service"
+    },
+    {
+      "UpstreamPathTemplate": "/api/addresses/{addressId}", // DELETE chỉ dành cho Admin
+      "UpstreamHttpMethod": [ "DELETE" ],
+      "DownstreamPathTemplate": "/api/addresses/{addressId}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "spss-user-service.runasp.net",
+          "Port": 80
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": [ "Admin" ]
+      },
       "SwaggerKey": "user-service"
     },
 
@@ -91,6 +106,32 @@
       "UpstreamPathTemplate": "/api/authentication/refresh-token",
       "UpstreamHttpMethod": [ "POST" ],
       "DownstreamPathTemplate": "/api/authentication/refresh-token",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "spss-user-service.runasp.net",
+          "Port": 80
+        }
+      ],
+      "SwaggerKey": "user-service"
+    },
+    {
+      "UpstreamPathTemplate": "/api/authentication/verify-account",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/api/authentication/verify-account",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "spss-user-service.runasp.net",
+          "Port": 80
+        }
+      ],
+      "SwaggerKey": "user-service"
+    },
+    {
+      "UpstreamPathTemplate": "/api/authentication/resend-otp",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/api/authentication/resend-otp",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {

@@ -1,5 +1,6 @@
 {
   "Routes": [
+    // --- Roles Controller ---
     {
       "UpstreamPathTemplate": "/api/roles/{everything}",
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
@@ -17,6 +18,8 @@
       },
       "SwaggerKey": "user-service"
     },
+
+    // --- Account Controller ---
     {
       "UpstreamPathTemplate": "/api/account/{everything}",
       "UpstreamHttpMethod": [ "GET", "PUT", "PATCH" ],
@@ -34,8 +37,44 @@
       },
       "SwaggerKey": "user-service"
     },
+
+    // --- Addresses Controller (ĐÃ SỬA LỖI) ---
     {
-      "UpstreamPathTemplate": "/api/addresses/{addressId}",
+      "UpstreamPathTemplate": "/api/addresses", // GET (danh sách) và POST (tạo mới) cho người dùng đã xác thực
+      "UpstreamHttpMethod": [ "GET", "POST" ],
+      "DownstreamPathTemplate": "/api/addresses",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "spss-user-service.runasp.net",
+          "Port": 80
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "SwaggerKey": "user-service"
+    },
+    {
+      "UpstreamPathTemplate": "/api/addresses/{addressId}", // PUT (cập nhật) cho người dùng đã xác thực
+      "UpstreamHttpMethod": [ "PUT" ],
+      "DownstreamPathTemplate": "/api/addresses/{addressId}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "spss-user-service.runasp.net",
+          "Port": 80
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "SwaggerKey": "user-service"
+    },
+    {
+      "UpstreamPathTemplate": "/api/addresses/{addressId}", // DELETE chỉ dành cho Admin
       "UpstreamHttpMethod": [ "DELETE" ],
       "DownstreamPathTemplate": "/api/addresses/{addressId}",
       "DownstreamScheme": "http",
@@ -51,10 +90,12 @@
       },
       "SwaggerKey": "user-service"
     },
+
+    // --- Authentication Controller (Định nghĩa rõ ràng từng endpoint) ---
     {
-      "UpstreamPathTemplate": "/api/addresses/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PUT" ],
-      "DownstreamPathTemplate": "/api/addresses/{everything}",
+      "UpstreamPathTemplate": "/api/authentication/login",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/api/authentication/login",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -62,23 +103,12 @@
           "Port": 80
         }
       ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": []
-      },
       "SwaggerKey": "user-service"
     },
     {
-      "UpstreamPathTemplate": "/api/authentication/{action}",
+      "UpstreamPathTemplate": "/api/authentication/register",
       "UpstreamHttpMethod": [ "POST" ],
-      "RouteIsCaseSensitive": false,
-      "UpstreamUrlPathIsCaseSensitive": false,
-      "UrlPathMatchOptions": {
-        "Match": "Prefix",
-        "Segment": 2,
-        "Values": [ "register-privileged", "assign-role" ]
-      },
-      "DownstreamPathTemplate": "/api/authentication/{action}",
+      "DownstreamPathTemplate": "/api/authentication/register",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -86,10 +116,45 @@
           "Port": 80
         }
       ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": [ "Admin" ]
-      },
+      "SwaggerKey": "user-service"
+    },
+    {
+      "UpstreamPathTemplate": "/api/authentication/refresh-token",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/api/authentication/refresh-token",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "spss-user-service.runasp.net",
+          "Port": 80
+        }
+      ],
+      "SwaggerKey": "user-service"
+    },
+    {
+      "UpstreamPathTemplate": "/api/authentication/verify-account",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/api/authentication/verify-account",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "spss-user-service.runasp.net",
+          "Port": 80
+        }
+      ],
+      "SwaggerKey": "user-service"
+    },
+    {
+      "UpstreamPathTemplate": "/api/authentication/resend-otp",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/api/authentication/resend-otp",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "spss-user-service.runasp.net",
+          "Port": 80
+        }
+      ],
       "SwaggerKey": "user-service"
     },
     {
@@ -127,9 +192,45 @@
       "SwaggerKey": "user-service"
     },
     {
-      "UpstreamPathTemplate": "/api/authentication/{everything}",
+      "UpstreamPathTemplate": "/api/authentication/assign-role",
       "UpstreamHttpMethod": [ "POST" ],
-      "DownstreamPathTemplate": "/api/authentication/{everything}",
+      "DownstreamPathTemplate": "/api/authentication/assign-role",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "spss-user-service.runasp.net",
+          "Port": 80
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": [ "Admin" ]
+      },
+      "SwaggerKey": "user-service"
+    },
+    {
+      "UpstreamPathTemplate": "/api/authentication/register-privileged",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/api/authentication/register-privileged",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "spss-user-service.runasp.net",
+          "Port": 80
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": [ "Admin" ]
+      },
+      "SwaggerKey": "user-service"
+    },
+
+    // --- Blogs, Countries, Skin-Conditions, Skin-Types (Tách GET và CUD để áp dụng bảo mật khác nhau) ---
+    {
+      "UpstreamPathTemplate": "/api/blogs/{everything}",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/api/blogs/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -157,9 +258,9 @@
       "SwaggerKey": "user-service"
     },
     {
-      "UpstreamPathTemplate": "/api/blogs/{everything}",
+      "UpstreamPathTemplate": "/api/countries/{everything}",
       "UpstreamHttpMethod": [ "GET" ],
-      "DownstreamPathTemplate": "/api/blogs/{everything}",
+      "DownstreamPathTemplate": "/api/countries/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -187,9 +288,9 @@
       "SwaggerKey": "user-service"
     },
     {
-      "UpstreamPathTemplate": "/api/countries/{everything}",
+      "UpstreamPathTemplate": "/api/skin-conditions/{everything}",
       "UpstreamHttpMethod": [ "GET" ],
-      "DownstreamPathTemplate": "/api/countries/{everything}",
+      "DownstreamPathTemplate": "/api/skin-conditions/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -199,6 +300,55 @@
       ],
       "SwaggerKey": "user-service"
     },
+    {
+      "UpstreamPathTemplate": "/api/skin-conditions/{everything}",
+      "UpstreamHttpMethod": [ "POST", "PUT", "DELETE" ],
+      "DownstreamPathTemplate": "/api/skin-conditions/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "spss-user-service.runasp.net",
+          "Port": 80
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": [ "Admin" ]
+      },
+      "SwaggerKey": "user-service"
+    },
+    {
+      "UpstreamPathTemplate": "/api/skin-types/{everything}",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/api/skin-types/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "spss-user-service.runasp.net",
+          "Port": 80
+        }
+      ],
+      "SwaggerKey": "user-service"
+    },
+    {
+      "UpstreamPathTemplate": "/api/skin-types/{everything}",
+      "UpstreamHttpMethod": [ "POST", "PUT", "DELETE" ],
+      "DownstreamPathTemplate": "/api/skin-types/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "spss-user-service.runasp.net",
+          "Port": 80
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": [ "Admin" ]
+      },
+      "SwaggerKey": "user-service"
+    },
+
+    // --- Chat & Replies ---
     {
       "UpstreamPathTemplate": "/api/chathistory/{everything}",
       "UpstreamHttpMethod": [ "GET", "POST" ],
@@ -233,25 +383,10 @@
       },
       "SwaggerKey": "user-service"
     },
+
+    // --- Users Controller (Tách bạch các route) ---
     {
-      "UpstreamPathTemplate": "/api/users/{id}",
-      "UpstreamHttpMethod": [ "DELETE" ],
-      "DownstreamPathTemplate": "/api/users/{id}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "spss-user-service.runasp.net",
-          "Port": 80
-        }
-      ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": [ "Admin" ]
-      },
-      "SwaggerKey": "user-service"
-    },
-    {
-      "UpstreamPathTemplate": "/api/users",
+      "UpstreamPathTemplate": "/api/users", // Admin lấy danh sách, tạo user
       "UpstreamHttpMethod": [ "GET", "POST" ],
       "DownstreamPathTemplate": "/api/users",
       "DownstreamScheme": "http",
@@ -268,9 +403,9 @@
       "SwaggerKey": "user-service"
     },
     {
-      "UpstreamPathTemplate": "/api/users/{everything}",
+      "UpstreamPathTemplate": "/api/users/{id}", // Người dùng thường xem/sửa thông tin của họ (giả định service có kiểm tra quyền)
       "UpstreamHttpMethod": [ "GET", "PUT" ],
-      "DownstreamPathTemplate": "/api/users/{everything}",
+      "DownstreamPathTemplate": "/api/users/{id}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -285,9 +420,9 @@
       "SwaggerKey": "user-service"
     },
     {
-      "UpstreamPathTemplate": "/api/skin-conditions/{everything}",
-      "UpstreamHttpMethod": [ "POST", "PUT", "DELETE" ],
-      "DownstreamPathTemplate": "/api/skin-conditions/{everything}",
+      "UpstreamPathTemplate": "/api/users/{id}", // Admin xóa user
+      "UpstreamHttpMethod": [ "DELETE" ],
+      "DownstreamPathTemplate": "/api/users/{id}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -299,51 +434,6 @@
         "AuthenticationProviderKey": "Bearer",
         "AllowedScopes": [ "Admin" ]
       },
-      "SwaggerKey": "user-service"
-    },
-    {
-      "UpstreamPathTemplate": "/api/skin-conditions/{everything}",
-      "UpstreamHttpMethod": [ "GET" ],
-      "DownstreamPathTemplate": "/api/skin-conditions/{everything}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "spss-user-service.runasp.net",
-          "Port": 80
-        }
-      ],
-      "SwaggerKey": "user-service"
-    },
-
-    // --- CẤU HÌNH MỚI CHO SKINTYPE CONTROLLER ---
-    {
-      "UpstreamPathTemplate": "/api/skin-types/{everything}",
-      "UpstreamHttpMethod": [ "POST", "PUT", "DELETE" ],
-      "DownstreamPathTemplate": "/api/skin-types/{everything}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "spss-user-service.runasp.net",
-          "Port": 80
-        }
-      ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": [ "Admin" ]
-      },
-      "SwaggerKey": "user-service"
-    },
-    {
-      "UpstreamPathTemplate": "/api/skin-types/{everything}",
-      "UpstreamHttpMethod": [ "GET" ],
-      "DownstreamPathTemplate": "/api/skin-types/{everything}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "spss-user-service.runasp.net",
-          "Port": 80
-        }
-      ],
       "SwaggerKey": "user-service"
     }
   ],
